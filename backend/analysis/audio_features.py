@@ -313,7 +313,7 @@ def get_stereo_imaging_features(audio_bytes, sr=None, bands=None, n_fft=2048, ho
     """
     # Load audio file
     audio_buffer = io.BytesIO(audio_bytes)
-    y, sr = librosa.load(audio_buffer, sr=sr, mono=True)
+    y, sr = librosa.load(audio_buffer, sr=sr, mono=False)
 
     # Default bands
     if bands is None:
