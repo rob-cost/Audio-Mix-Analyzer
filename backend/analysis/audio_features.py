@@ -124,6 +124,7 @@ def get_loudness_features(audio_bytes, sr=None):
 
     # --- Crest Factor ---
     crest_factor = peak / (rms + 1e-12)
+    crest_factor_db = 20 * np.log10(crest_factor + 1e-12)
 
     # --- Loudness evolution (per 30s section) ---
     section_length_sec = 30
@@ -142,7 +143,7 @@ def get_loudness_features(audio_bytes, sr=None):
         "dynamic_range": float(dynamic_range),
         "peak_db": float(peak_db),
         "true_peak_db": float(true_peak_db),
-        "crest_factor": float(crest_factor),
+        "crest_factor_db": float(crest_factor_db),
         "loudness_evolution": section_rms
     }
 
@@ -179,7 +180,7 @@ def get_transient_features(audio_bytes, sr=None):
     transient_density = len(onsets) / duration_sec if duration_sec > 1e-6 else 0.0
 
     # Percussion energy
-    y_perc = librosa.effects.percussive(y)
+    y_perc = librosa.effects.percussive(y, kernel_size=31)[0]
     total_energy = np.sum(y**2) + 1e-12 
     percussion_energy_pct = float(np.sum(y_perc**2) / total_energy * 100)
 
@@ -189,12 +190,14 @@ def get_transient_features(audio_bytes, sr=None):
     }
 
 
-def get_harmonic_content_features(audio_bytes, sr=None):
+def get_harmonic_content_features(audio_bytes, sr=22050): 
 
     """
     Analyse the harmonic content of an audio signal.
 
-    Parameters: audio_bytes : bytes of audio file, sr : sample rate (None for original)
+    Parameters: 
+        audio_bytes : bytes of audio file 
+        sr : sample rate 22050 (optimal for harmonics analysis)
 
     Returns: Dictionary of harmonic content features
 
@@ -205,22 +208,29 @@ def get_harmonic_content_features(audio_bytes, sr=None):
     y, sr = librosa.load(audio_buffer, sr=sr, mono=True)
 
     # Harmonic/Percussive source separation
-    y_harm, _ = librosa.effects.hpss(y)
+    y_harm, y_perc = librosa.effects.hpss(y, kernel_size= 31)
 
-    C = librosa.cqt(y_harm, sr=sr, bins_per_octave=36, n_bins=7*36)
-    chroma = librosa.feature.chroma_cqt(C=C, sr=sr)
+    # Convert it into np array
+    y_harm = np.asarray(y_harm)
 
-
+    chroma = librosa.feature.chroma_cqt(y=y_harm, sr=sr, bins_per_octave=36, n_octaves=7) # faster approach
     chroma_mean = chroma.mean(axis=1)
-    key_index = np.argmax(chroma_mean)
-    pitch_names = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"]
-    estimated_key = pitch_names[key_index]
+   
+    try:
+        # Get prelevant key
+        estimated_key = librosa.key.key_detect(y_harm, sr=sr)
+    except:
+    # Fallback to simple chroma
+        key_index = np.argmax(chroma_mean)
+        pitch_names = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"]
+        estimated_key = pitch_names[key_index]  
 
     # Harmonic richness
-    spectral_centroid = librosa.feature.spectral_centroid(y=y_harm, sr=sr)  # calculate brightness
-    spectral_bandwidth = librosa.feature.spectral_bandwidth(y=y_harm, sr=sr)
-    spectral_contrast = librosa.feature.spectral_contrast(y=y_harm, sr=sr) # calculate amount of harmonics presence
-    harmonic_rolloff = librosa.feature.spectral_rolloff(y=y_harm, sr=sr)    
+    S = np.abs(librosa.stft(y_harm, n_fft=2048))
+    spectral_centroid = librosa.feature.spectral_centroid(S=S, sr=sr) # calculate brigthness
+    spectral_bandwidth = librosa.feature.spectral_bandwidth(S=S, sr=sr)
+    spectral_contrast = librosa.feature.spectral_contrast(S=S, sr=sr) # calculate harmonic presence
+    spectral_rolloff = librosa.feature.spectral_rolloff(S=S, sr=sr)
 
     # Tonal stability
     chroma_std = chroma.std(axis=1)   # variability of each pitch class
@@ -232,7 +242,7 @@ def get_harmonic_content_features(audio_bytes, sr=None):
         "harmonic_centroid": float(spectral_centroid.mean()),
         "harmonic_bandwidth": float(spectral_bandwidth.mean()),
         "harmonic_contrast": float(spectral_contrast.mean()),
-        "harmonic_rolloff": float(harmonic_rolloff.mean()),
+        "harmonic_rolloff": float(spectral_rolloff.mean()),
         "tonal_stability": float(tonal_stability),
         "estimated_key": estimated_key,
         "chroma_mean": chroma_mean.tolist(),
@@ -241,81 +251,104 @@ def get_harmonic_content_features(audio_bytes, sr=None):
 
 
 def get_frequency_spectrum_energy(audio_bytes, sr=None):
+    """
+    Calculate frequency spectrum energy across bands and spectral tilt.
 
-    # Load audio file
+    Args:
+        audio_bytes: bytes of audio file
+        sr: sample rate (None to preserve original)
+
+    Returns:
+        Dictionary with normalized energy bands and spectral tilt.
+    """
+
+    # Load audio
     audio_buffer = io.BytesIO(audio_bytes)
     y, sr = librosa.load(audio_buffer, sr=sr, mono=True)
-    # Compute FFT
+
+    if len(y) == 0:
+        return {
+            "energy_bands": {
+                "Sub": 0.0,
+                "Bass": 0.0,
+                "Low_mids": 0.0,
+                "Mids": 0.0,
+                "High_mids": 0.0,
+                "Air": 0.0
+            },
+            "spectral_tilt": 0.0
+        }
+
+    # FFT
     fft_complex = np.fft.rfft(y)
-
-    # Magnitude spectrum
     magnitudes = np.abs(fft_complex)
-
-    # Frequency array (same shape as magnitudes)
     frequencies = np.fft.rfftfreq(len(y), 1.0 / sr)
-    
-    # Calculate frequency spectrum energy
-    # Frequency bands energy
+
+    # Frequency bands
     bands = {
         "Sub": (20, 60),
         "Bass": (61, 200),
         "Low_mids": (201, 600),
         "Mids": (601, 3000),
-        "High_mids": (3001, 8000),  
-        "Air": (8001 ,20000)
+        "High_mids": (3001, 8000),
+        "Air": (8001, min(20000, sr//2))
     }
 
-    try:
-        energy_bands = {}
+    energy_bands = {}
+    for name, (f_low, f_high) in bands.items():
+        # Ensure band is within frequency range
+        f_high = min(f_high, sr/2)
+        idx = np.where((frequencies >= f_low) & (frequencies <= f_high))[0]
+        if len(idx) == 0:
+            energy_bands[name] = 0.0
+            continue
 
-        for name, (f_low, f_high) in bands.items():
-            # find frequency bins inside the band
-            idx = np.where((frequencies >= f_low) & (frequencies <= f_high))[0]
-            
-            if len(idx) == 0:
-                energy_bands[name] = 0.0
-                continue
+        # Energy = sum of squared magnitudes
+        energy = np.sum(magnitudes[idx] ** 2)
+        energy_bands[name] = float(energy)
 
-            # energy = sum of squared magnitudes inside band
-            energy = np.sum(magnitudes[idx] ** 2)
-            energy_bands[name] = float(energy)
+    # Normalize energy so sum = 1
+    total_energy = sum(energy_bands.values()) + 1e-12  # prevent divide by zero
+    for k in energy_bands:
+        energy_bands[k] /= total_energy
 
-        # normalize so bands sum to 1 (percentage of total energy)
-        total_energy = sum(energy_bands.values())
-        if total_energy > 0:
-            for k in energy_bands:
-                energy_bands[k] = energy_bands[k] / total_energy
-
-    except Exception as e:
-        print(f"energy band calculation failed: {e}")
-
-    
-    # Spectral tilt
-    freqs = frequencies.copy()
-    freqs[freqs == 0] = 1  
-    log_freqs = np.log10(freqs)
-    a, b = np.polyfit(log_freqs, magnitudes, 1)
+    # Spectral tilt: linear regression of log10(freq) vs magnitude
+    safe_mags = magnitudes + 1e-12  # avoid log(0)
+    freqs_nonzero = frequencies.copy()
+    freqs_nonzero[freqs_nonzero == 0] = 1
+    log_freqs = np.log10(freqs_nonzero)
+    a, _ = np.polyfit(log_freqs, safe_mags, 1)
     spectral_tilt = float(a)
 
     return {
         "energy_bands": energy_bands,
-        "spetral_tilt": spectral_tilt,
+        "spectral_tilt": spectral_tilt
     }
 
 
 def get_stereo_imaging_features(audio_bytes, sr=None, bands=None, n_fft=2048, hop_length=1024):
     """
+    Analyze stereo imaging of an audio track.
 
-    Analyze the stereo imaging of the track
-    
-    Returns: Dicitonary with imaging metrics.
+    Args:
+        audio_bytes: bytes of audio file
+        sr: sample rate (None to keep original)
+        bands: dictionary of frequency bands
+        n_fft: FFT window size
+        hop_length: hop length for STFT
 
+    Returns:
+        Dictionary with stereo imaging metrics.
     """
-    # Load audio file
+
+    # Load stereo audio
     audio_buffer = io.BytesIO(audio_bytes)
     y, sr = librosa.load(audio_buffer, sr=sr, mono=False)
 
-    # Default bands
+    if y is None or len(y) == 0:
+        return {"error": "empty audio"}
+
+    # Default frequency bands
     if bands is None:
         bands = {
             "Sub": (20, 60),
@@ -326,59 +359,49 @@ def get_stereo_imaging_features(audio_bytes, sr=None, bands=None, n_fft=2048, ho
             "Air": (8001, min(sr//2, 20000))
         }
 
-    # Accept (n,2) or (2,n)
-    if y is None or len(y) == 0:
-        return {"error": "empty audio"}
-
     y = np.asarray(y)
+    # Ensure stereo shape: (2, n)
     if y.ndim == 1:
-        # mono -> duplicate to make stereo (so metrics are defined)
         y = np.vstack([y, y])
     elif y.ndim == 2 and y.shape[1] == 2:
-        # shape (n,2) -> transpose
         y = y.T
     elif y.ndim == 2 and y.shape[0] == 2:
         pass
     else:
-        raise ValueError("Input audio must be shape (n,) or (n,2) or (2,n)")
+        raise ValueError("Audio must be shape (n,), (n,2) or (2,n)")
 
     left = y[0].astype(np.float64)
     right = y[1].astype(np.float64)
 
-    # Basic RMS (global)
-    def rms(x):
-        return float(np.sqrt(np.mean(x**2))) if x.size > 0 else 0.0
+    # --- Global RMS and balance ---
+    rms_L = np.sqrt(np.mean(left**2))
+    rms_R = np.sqrt(np.mean(right**2))
+    lr_balance = (rms_L - rms_R) / max(rms_L + rms_R, 1e-12)
 
-    rms_L = rms(left)
-    rms_R = rms(right)
-    lr_balance = (rms_L - rms_R) / max(rms_L + rms_R, 1e-12)  # -1..+1 (neg = right louder)
-
-    # Correlation / phase correlation (Pearson's r)
-    # if constant signal produce safe result
+    # --- Correlation ---
     if left.std() < 1e-12 or right.std() < 1e-12:
         correlation = 1.0 if np.allclose(left, right) else 0.0
     else:
         correlation = float(np.corrcoef(left, right)[0, 1])
 
-    # Mid / Side signals
-    mid = (left + right) / 2.0
-    side = (left - right) / 2.0
+    # --- Mid / Side signals ---
+    mid = (left + right) / 2
+    side = (left - right) / 2
     mid_energy = float(np.sum(mid**2))
     side_energy = float(np.sum(side**2))
-    ms_ratio = float(mid_energy / max(mid_energy + side_energy, 1e-12))  # fraction center
-    side_ratio = float(side_energy / max(mid_energy + side_energy, 1e-12))  # fraction side
+    ms_center_fraction = mid_energy / max(mid_energy + side_energy, 1e-12)
+    ms_side_fraction = side_energy / max(mid_energy + side_energy, 1e-12)
 
-    # STFT (magnitude) for band analysis
+    # --- STFT ---
     S_left = np.abs(librosa.stft(left, n_fft=n_fft, hop_length=hop_length))
     S_right = np.abs(librosa.stft(right, n_fft=n_fft, hop_length=hop_length))
     freqs = librosa.fft_frequencies(sr=sr, n_fft=n_fft)
 
-    # Per-band M/S energies and width
+    # --- Per-band mid/side energy and width ---
     band_ms = {}
     band_widths = {}
     for name, (f_low, f_high) in bands.items():
-        # ensure f_high within Nyquist
-        f_high = min(f_high if f_high is not None else sr//2, sr//2)
+        f_high = min(f_high if f_high else sr/2, sr/2)
         mask = (freqs >= f_low) & (freqs <= f_high)
         if not np.any(mask):
             band_ms[name] = {"mid_energy": 0.0, "side_energy": 0.0}
@@ -388,75 +411,47 @@ def get_stereo_imaging_features(audio_bytes, sr=None, bands=None, n_fft=2048, ho
         L_mag = S_left[mask, :]
         R_mag = S_right[mask, :]
 
-        # compute energy = sum over freq bins and frames of mag^2
         L_energy = float(np.sum(L_mag**2))
         R_energy = float(np.sum(R_mag**2))
 
-        # mid/side energy per band (using magnitudes -> energies)
-        band_mid_energy = (L_energy + R_energy + 2.0 * np.sum(L_mag * R_mag)) / 4.0
-        band_side_energy = (L_energy + R_energy - 2.0 * np.sum(L_mag * R_mag)) / 4.0
+        band_mid_energy = max((L_energy + R_energy + 2.0 * np.sum(L_mag * R_mag)) / 4.0, 0.0)
+        band_side_energy = max((L_energy + R_energy - 2.0 * np.sum(L_mag * R_mag)) / 4.0, 0.0)
 
-        # numerical safety
-        band_mid_energy = float(max(band_mid_energy, 0.0))
-        band_side_energy = float(max(band_side_energy, 0.0))
-
-        band_ms[name] = {
-            "mid_energy": band_mid_energy,
-            "side_energy": band_side_energy
-        }
-
-        # width metric: side / (mid+side) in [0..1]
+        band_ms[name] = {"mid_energy": band_mid_energy, "side_energy": band_side_energy}
         denom = band_mid_energy + band_side_energy
-        width = float(band_side_energy / denom) if denom > 1e-12 else 0.0
-        band_widths[name] = width
+        band_widths[name] = band_side_energy / denom if denom > 1e-12 else 0.0
 
-    # Global width (from STFT energies)
-    # compute global frame-wise mid and side RMS to capture time variation
+    # --- Frame-wise width and balance ---
     frames = S_left.shape[1]
-    frame_mid = []
-    frame_side = []
-    for f_idx in range(frames):
-        Lf = S_left[:, f_idx]
-        Rf = S_right[:, f_idx]
-        mid_f = np.sum((Lf + Rf)**2) / 4.0
-        side_f = np.sum((Lf - Rf)**2) / 4.0
-        frame_mid.append(mid_f)
-        frame_side.append(side_f)
+    frame_mid = np.sum((S_left + S_right)**2, axis=0) / 4
+    frame_side = np.sum((S_left - S_right)**2, axis=0) / 4
+    frame_width = frame_side / (frame_mid + frame_side + 1e-12)
 
-    frame_mid = np.array(frame_mid)
-    frame_side = np.array(frame_side)
-    frame_denom = frame_mid + frame_side + 1e-12
-    frame_width = frame_side / frame_denom  # per frame
+    mean_frame_width = float(np.mean(frame_width))
+    std_frame_width = float(np.std(frame_width))
 
-    mean_frame_width = float(np.mean(frame_width)) if frame_width.size > 0 else 0.0
-    std_frame_width = float(np.std(frame_width)) if frame_width.size > 0 else 0.0
-
-    # Left/Right balance over time: compute short-time RMS and report mean/std
     frame_rms_L = librosa.feature.rms(y=left, frame_length=n_fft, hop_length=hop_length)[0]
     frame_rms_R = librosa.feature.rms(y=right, frame_length=n_fft, hop_length=hop_length)[0]
-    # convert to python lists if desired, but we'll compute summary stats
-    # balance per frame: (L-R)/(L+R)
-    denom = frame_rms_L + frame_rms_R + 1e-12
-    frame_balance = (frame_rms_L - frame_rms_R) / denom
-    mean_frame_balance = float(np.mean(frame_balance)) if frame_balance.size > 0 else 0.0
-    std_frame_balance = float(np.std(frame_balance)) if frame_balance.size > 0 else 0.0
+    frame_balance = (frame_rms_L - frame_rms_R) / (frame_rms_L + frame_rms_R + 1e-12)
+    mean_frame_balance = float(np.mean(frame_balance))
+    std_frame_balance = float(np.std(frame_balance))
 
-    results = {
+    # --- Results ---
+    return {
         "rms_left": float(rms_L),
         "rms_right": float(rms_R),
-        "lr_balance": float(lr_balance),               # -1..+1 (neg = right louder)
-        "correlation": float(correlation),             # -1..+1 (1 = mono identical)
+        "lr_balance": float(lr_balance),
+        "correlation": float(correlation),
         "mid_energy": float(mid_energy),
         "side_energy": float(side_energy),
-        "ms_center_fraction": float(ms_ratio),
-        "ms_side_fraction": float(side_ratio),
-        "band_ms": band_ms,                            # nested dict with mid/side energies
-        "band_widths": band_widths,                    # side/(mid+side) per band
+        "ms_center_fraction": float(ms_center_fraction),
+        "ms_side_fraction": float(ms_side_fraction),
+        "band_ms": band_ms,
+        "band_widths": band_widths,
         "mean_frame_width": mean_frame_width,
         "std_frame_width": std_frame_width,
         "mean_frame_balance": mean_frame_balance,
         "std_frame_balance": std_frame_balance
     }
 
-    return results
 
