@@ -9,7 +9,7 @@ type AnalysisReport = {
   stereo_image_features: Record<string, any>;
 };
 
-export default function App() {
+export default function MainView() {
   const [report, setReport] = useState<AnalysisReport | null>(null);
 
   const upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
