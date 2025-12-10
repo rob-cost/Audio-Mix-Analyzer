@@ -1,6 +1,8 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-import uuid, os
+from concurrent.futures import ProcessPoolExecutor
+import asyncio
+import os
 from analysis.pipeline import (
     # analyze_uploaded_track_loudness,
     # analyze_uploaded_track_harmonic,
@@ -12,6 +14,8 @@ from analysis.helper import to_python
 
 app = FastAPI()
 
+executor = ProcessPoolExecutor(max_workers=os.cpu_count() - 1) # make sure 1 core is left for security reason
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins = ['*'],
@@ -19,45 +23,34 @@ app.add_middleware(
     allow_headers = ['*']
 )
 
-# @app.post("/analyze-loudness")
-# async def analyze(file: UploadFile = File(...)):
-#     audio_bytes = await file.read()
-#     try:
-#         report = analyze_uploaded_track_loudness(audio_bytes, file.content_type)
-#         report_obj = to_python(report)
-#     except ValueError as e:
-#         return {"success": False, "error": str(e)}
-#     return report_obj
+# --- HELPER CPU PROCESSOR ---
 
+async def run_in_processpool(audio_bytes: bytes, mime: str):
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor (
+        executor,
+        analyze_uploaded_track_complete,
+        audio_bytes,
+        mime
+    )
 
-# @app.post("/analyze-transient")
-# async def analyze(file: UploadFile = File(...)):
-#     audio_bytes = await file.read()
-#     try:
-#         report = analyze_uploaded_track_transient(audio_bytes, file.content_type)
-#         report_obj = to_python(report)
-#     except ValueError as e:
-#         return {"success": False, "error": str(e)}
-#     return report_obj
+# --- PROCESS FILE UPLOADED ---
 
+async def process_file(file:UploadFile):
+    audio_bytes = await file.read()
+    try:
+        report = await run_in_processpool(audio_bytes, file.content_type)
+        return to_python(report)
+    except ValueError as e:
+        return {"success": False, "error": str(e)}
+    
 
-# @app.post("/analyze-harmonic")
-# async def analyze(file: UploadFile = File(...)):
-#     audio_bytes = await file.read()
-#     try:
-#         report = analyze_uploaded_track_harmonic(audio_bytes, file.content_type)
-#         report_obj = to_python(report)
-#     except ValueError as e:
-#         return {"success": False, "error": str(e)}
-#     return report_obj
+# --- ENDPOINTS ---
 
 @app.post("/analyze")
 async def analyze(file:UploadFile = File(...)):
-    audio_bytes = await file.read()
-    try:
-        report = analyze_uploaded_track_complete(audio_bytes, file.content_type)
-        report_obj = to_python(report)
-    except ValueError as e:
-        return {"success": False, "error": str(e)}
-    return report_obj
+    return await process_file(file)
 
+@app.post("/analyze_reference")
+async def analyze_reference(file:UploadFile = File(...)):
+    return await process_file(file)
