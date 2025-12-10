@@ -12,6 +12,7 @@ dependencies = [
     "pydub>=0.25.1",
     "pyloudnorm>=0.1.1",
     "python-multipart>=0.0.20",
+    "slowapi>=0.1.9",
     "transformers>=4.57.3",
     "uvicorn>=0.38.0",
 ]
