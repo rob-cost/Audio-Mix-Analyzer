@@ -39,12 +39,15 @@ def analyze_uploaded_track_complete(audio_bytes: bytes, mime_type: str):
     # --- LOAD AUDIO ---
     
     try:
-        # Load audio in mono
-        y_mono, sr_mono = load_audio(wav_bytes, sr=None, mono=True)
+
         # Load audio in stereo
         y_stereo, sr_stereo = load_audio(wav_bytes, sr=None, mono=False)
+        # Load audio in mono
+        y_mono = librosa.to_mono(y_stereo)
+        sr_mono = sr_stereo
         # Load audio for harmonic_features
-        y_harmonic, sr_harmonic = load_audio(wav_bytes, sr= 22050, mono=True)
+        y_harmonic = librosa.resample(y_mono, orig_sr=sr_mono, target_sr=22050)
+        sr_harmonic = 22050
         # Calculate onset
         onset_env = librosa.onset.onset_strength(y=y_mono, sr=sr_mono)
 
