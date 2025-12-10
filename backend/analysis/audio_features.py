@@ -6,34 +6,63 @@ from scipy.signal import resample_poly
 import io
 
 
-def get_tempo_features (audio_bytes, sr=None):
+def load_audio(audio_bytes, sr=None, mono= True):
+    """
+    Load audio once to avoid redundant I/O operations.
+    
+    Args:
+        audio_bytes: bytes of audio file
+        sr: sample rate (None for original)
+        mono: whether to load as mono
+    
+    Returns:
+        y: audio array
+        sr: sample rate
+    """
+    audio_buffer = io.BytesIO(audio_bytes)
+    y, sr = librosa.load(audio_buffer, sr=sr, mono=mono)
+    return y, sr
+
+
+def get_tempo_features (y, sr, onset_env=None):
     """
     Get tempo features
 
     Arguments: 
-        audio_bytes : bytes of audio file, 
-        sr : sample rate (None for original)
+        y : mono audio 
+        sr : sample rate
+        onset_env
 
     Return: 
         Dictionary of tempo features
+
     """
-    
-    # Load audio
-    audio_buffer = io.BytesIO(audio_bytes)
-    y, sr = librosa.load(audio_buffer, sr=sr, mono=True)
 
     # Onset envelope
-    onset_env = librosa.onset.onset_strength(y=y, sr=sr)
+    # onset_env = librosa.onset.onset_strength(y=y, sr=sr)
 
+    # Onset detection 
+    if onset_env is None:
+        onset_env = librosa.onset.onset_strength(y=y, sr=sr)
+
+    # --- OPTION 1 ---
     # Detect tempo using multiple methods for better accuracy
+    # try:
+    #     # Use autocorrelation-based tempo estimate
+    #     tempo = librosa.beat.tempo(onset_envelope=onset_env, sr=sr, aggregate=None)
+    #     # Pick median as global tempo
+    #     tempo_bpm = float(np.median(tempo))
+    # except Exception:
+    #     # Fallback
+    #     tempo_bpm = 0.0
+
+    # --- OPTION 2 ---
+    # Detect tempo - let librosa aggregate internally
     try:
-        # Use autocorrelation-based tempo estimate
-        tempo = librosa.beat.tempo(onset_envelope=onset_env, sr=sr, aggregate=None)
-        # Pick median as global tempo
-        tempo_bpm = float(np.median(tempo))
+        tempo_bpm = float(librosa.beat.tempo(onset_envelope=onset_env, sr=sr)[0])
     except Exception:
-        # Fallback
         tempo_bpm = 0.0
+
 
     # Beat tracking
     try:
@@ -73,33 +102,29 @@ def get_tempo_features (audio_bytes, sr=None):
     }
 
 
-def get_loudness_features(audio_bytes, sr=None): 
+def get_loudness_features(y_stereo, sr): 
     """
     Get loudness features for given audio bytes.
 
     Arguments: 
-        audio_bytes : bytes of audio file
-        sr : sample rate (None for original)
+        y_stereo : stereo audio
+        sr : sample rate
 
     Returns: 
         Dictionary of loudness features
     """
-
-    # Load audio file (keep stereo)
-    audio_buffer = io.BytesIO(audio_bytes)
-    y, sr = librosa.load(audio_buffer, sr=sr, mono=False)
     
     # Ensure stereo
-    if y.ndim == 1:
-        y = np.vstack([y, y])
-    left, right = y
+    if y_stereo.ndim == 1:
+        y_stereo = np.vstack([y_stereo, y_stereo])
+    left, right = y_stereo
 
     # Mono signal for integrated loudness & peak calculation
     mono = (left + right) / 2
 
     # --- Integrated Loudness (LUFS) ---
     meter = pyln.Meter(sr)  # Creates LUFS meter
-    stereo_signal = y.T  # shape: (samples, channels)
+    stereo_signal = y_stereo.T  # shape: (samples, channels)
     loudness_lufs = meter.integrated_loudness(stereo_signal)
 
     # --- RMS ---
@@ -117,7 +142,7 @@ def get_loudness_features(audio_bytes, sr=None):
     peak_db = 20 * np.log10(peak + 1e-12)
 
     # --- True Peak ---
-    upsample = 4  # 4× oversampling
+    upsample = 2  # 4× oversampling
     y_os = resample_poly(mono, upsample, 1)
     true_peak = np.max(np.abs(y_os))
     true_peak_db = 20 * np.log10(true_peak + 1e-12)
@@ -150,38 +175,42 @@ def get_loudness_features(audio_bytes, sr=None):
     return features
 
 
-def get_transient_features(audio_bytes, sr=None):
+def get_transient_features(y, sr, max_duration = None, onset_env=None):
     """
     Fast transient analysis for audio bytes.
     
     Args:
-        audio_bytes: bytes of audio file
-        sr: sample rate (None to keep original)
+        y: mono audio
+        sr: sample rate
+        max_duration: lenght of the audio
+        onset_env
     
     Returns:
         Dictionary with essential transient features
     """
 
-    # Load mono audio
-    audio_buffer = io.BytesIO(audio_bytes)
-    y, sr = librosa.load(audio_buffer, sr=sr, mono=True)
-
     if len(y) == 0:
-        return {
-            "transient_density": 0.0,
-            "percussion_energy_pct": 0.0
-        }
+        return {"transient_density": 0.0, "percussion_energy_pct": 0.0}
+
+    total_duration = len(y) / sr
+
+    # If audio is longer than max_duration, take the center segment
+    if total_duration > max_duration:
+        max_samples = int(max_duration * sr)
+        start_idx = (len(y) - max_samples) // 2
+        y = y[start_idx : start_idx + max_samples]
 
     duration_sec = len(y) / sr
 
-    # Onset detection 
-    onset_env = librosa.onset.onset_strength(y=y, sr=sr)
+    # Onset detection
+    if onset_env is None:
+        onset_env = librosa.onset.onset_strength(y=y, sr=sr)
     onsets = librosa.onset.onset_detect(onset_envelope=onset_env, sr=sr)
     transient_density = len(onsets) / duration_sec if duration_sec > 1e-6 else 0.0
 
     # Percussion energy
-    y_perc = librosa.effects.percussive(y, kernel_size=31)[0]
-    total_energy = np.sum(y**2) + 1e-12 
+    y_perc = librosa.effects.percussive(y)
+    total_energy = np.sum(y**2) + 1e-12
     percussion_energy_pct = float(np.sum(y_perc**2) / total_energy * 100)
 
     return {
@@ -190,40 +219,51 @@ def get_transient_features(audio_bytes, sr=None):
     }
 
 
-def get_harmonic_content_features(audio_bytes, sr=22050): 
+def get_harmonic_content_features(y, sr): 
 
     """
     Analyse the harmonic content of an audio signal.
 
     Parameters: 
-        audio_bytes : bytes of audio file 
+        y : mono audio
         sr : sample rate 22050 (optimal for harmonics analysis)
 
     Returns: Dictionary of harmonic content features
 
     """
 
-    # Load audio file
-    audio_buffer = io.BytesIO(audio_bytes)
-    y, sr = librosa.load(audio_buffer, sr=sr, mono=True)
 
     # Harmonic/Percussive source separation
-    y_harm, y_perc = librosa.effects.hpss(y, kernel_size= 31)
+    y_harm, y_perc = librosa.effects.hpss(y, kernel_size= 11)
 
     # Convert it into np array
     y_harm = np.asarray(y_harm)
 
-    chroma = librosa.feature.chroma_cqt(y=y_harm, sr=sr, bins_per_octave=36, n_octaves=7) # faster approach
+    # --- OPTION 1 ---
+    # chroma = librosa.feature.chroma_cqt(y=y_harm, sr=sr, bins_per_octave=36, n_octaves=7) # faster approach
+    # chroma_mean = chroma.mean(axis=1)
+
+    # --- OPTION 2 ---
+    chroma = librosa.feature.chroma_stft(y=y_harm, sr=sr, n_fft=2048, hop_length=512)
     chroma_mean = chroma.mean(axis=1)
-   
-    try:
-        # Get prelevant key
-        estimated_key = librosa.key.key_detect(y_harm, sr=sr)
-    except:
-    # Fallback to simple chroma
-        key_index = np.argmax(chroma_mean)
-        pitch_names = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"]
-        estimated_key = pitch_names[key_index]  
+
+
+    # --- OPTION 1 ---
+    # try:
+    #     # Get prelevant key
+    #     estimated_key = librosa.key.key_detect(y_harm, sr=sr)
+    # except:
+    # # Fallback to simple chroma
+    #     key_index = np.argmax(chroma_mean)
+    #     pitch_names = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"]
+    #     estimated_key = pitch_names[key_index]  
+
+
+    # --- OPTION 2 ---
+    key_index = np.argmax(chroma_mean)
+    pitch_names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+    estimated_key = pitch_names[key_index]
+
 
     # Harmonic richness
     S = np.abs(librosa.stft(y_harm, n_fft=2048))
@@ -250,21 +290,17 @@ def get_harmonic_content_features(audio_bytes, sr=22050):
     return features[0]
 
 
-def get_frequency_spectrum_energy(audio_bytes, sr=None):
+def get_frequency_spectrum_energy(y, sr):
     """
     Calculate frequency spectrum energy across bands and spectral tilt.
 
     Args:
-        audio_bytes: bytes of audio file
-        sr: sample rate (None to preserve original)
+        y : mono audio
+        sr: sample rate 
 
     Returns:
         Dictionary with normalized energy bands and spectral tilt.
     """
-
-    # Load audio
-    audio_buffer = io.BytesIO(audio_bytes)
-    y, sr = librosa.load(audio_buffer, sr=sr, mono=True)
 
     if len(y) == 0:
         return {
@@ -326,24 +362,23 @@ def get_frequency_spectrum_energy(audio_bytes, sr=None):
     }
 
 
-def get_stereo_imaging_features(audio_bytes, sr=None, bands=None, n_fft=2048, hop_length=1024):
+def get_stereo_imaging_features(y, sr, bands=None):
     """
     Analyze stereo imaging of an audio track.
 
     Args:
-        audio_bytes: bytes of audio file
-        sr: sample rate (None to keep original)
+        y: stereo file
+        sr: sample rate
         bands: dictionary of frequency bands
-        n_fft: FFT window size
-        hop_length: hop length for STFT
 
     Returns:
         Dictionary with stereo imaging metrics.
     """
 
-    # Load stereo audio
-    audio_buffer = io.BytesIO(audio_bytes)
-    y, sr = librosa.load(audio_buffer, sr=sr, mono=False)
+
+    # Reduced FFT sizes for faster processing
+    n_fft = 1024
+    hop_length = 512
 
     if y is None or len(y) == 0:
         return {"error": "empty audio"}
@@ -360,6 +395,7 @@ def get_stereo_imaging_features(audio_bytes, sr=None, bands=None, n_fft=2048, ho
         }
 
     y = np.asarray(y)
+
     # Ensure stereo shape: (2, n)
     if y.ndim == 1:
         y = np.vstack([y, y])
