@@ -10,9 +10,10 @@ type AnalysisReport = {
 };
 
 export default function MainView() {
-  const [report, setReport] = useState<AnalysisReport | null>(null);
+  const [mainReport, setMainReport] = useState<AnalysisReport | null>(null);
+  const [refReport, setRefReport] = useState<AnalysisReport | null>(null);
 
-  const upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const uploadMain = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files![0];
     const form = new FormData();
     form.append("file", file);
@@ -23,9 +24,26 @@ export default function MainView() {
         body: form,
       });
 
-      setReport(await res.json());
+      setMainReport(await res.json());
     } catch (err) {
-      console.error("Analysis Failed", { err });
+      console.error("Main Track Analysis Failed", { err });
+    }
+  };
+
+  const uploadRef = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files![0];
+    const form = new FormData();
+    form.append("file", file);
+
+    try {
+      const res = await fetch("http://localhost:8000/analyze_reference", {
+        method: "POST",
+        body: form,
+      });
+
+      setRefReport(await res.json());
+    } catch (err) {
+      console.error("Reference Track Analysis Failed", { err });
     }
   };
 
@@ -33,13 +51,28 @@ export default function MainView() {
     <div style={{ padding: 30 }}>
       <h1>Audio Mix Analyzer</h1>
 
-      <input type="file" onChange={upload} />
+      <input type="file" onChange={uploadMain} />
 
-      {report && (
+      <input type="file" onChange={uploadRef} />
+
+      {mainReport && (
         <div style={{ marginTop: 30 }}>
           <h2>Analysis Report</h2>
 
-          {Object.entries(report).map(([section, metrics]) => (
+          {Object.entries(mainReport).map(([section, metrics]) => (
+            <div key={section}>
+              <h3>{section}</h3>
+              <pre>{JSON.stringify(metrics, null, 2)}</pre>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {refReport && (
+        <div style={{ marginTop: 30 }}>
+          <h2>Analysis Report</h2>
+
+          {Object.entries(refReport).map(([section, metrics]) => (
             <div key={section}>
               <h3>{section}</h3>
               <pre>{JSON.stringify(metrics, null, 2)}</pre>
