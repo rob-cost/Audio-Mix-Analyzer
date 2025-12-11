@@ -134,8 +134,15 @@ def get_loudness_features(y_stereo, sr):
     # --- RMS per frame ---
     rms_frame = librosa.feature.rms(y=mono, frame_length=2048, hop_length=512)[0]
 
-    # --- Dynamic Range ---
-    dynamic_range = float(np.max(rms_frame) - np.min(rms_frame))
+    # --- Dynamic Range (improved) ---
+    # Use LUFS-like short-term blocks for more accurate DR
+    block_size_sec = 0.4
+    block_size_samples = int(sr * block_size_sec)
+    rms_blocks = [
+        np.sqrt(np.mean(mono[i:i+block_size_samples]**2) + 1e-12)
+        for i in range(0, len(mono), block_size_samples)
+    ]
+    dynamic_range_db = 20 * np.log10(max(rms_blocks) / (min(rms_blocks) + 1e-12))
 
     # --- Peak amplitude ---
     peak = np.max(np.abs(mono))
@@ -165,7 +172,7 @@ def get_loudness_features(y_stereo, sr):
     features = {
         "loudness_lufs": float(loudness_lufs),
         "rms_db": float(rms_db),
-        "dynamic_range": float(dynamic_range),
+        "dynamic_range_db": float(dynamic_range_db),
         "peak_db": float(peak_db),
         "true_peak_db": float(true_peak_db),
         "crest_factor_db": float(crest_factor_db),
@@ -364,26 +371,47 @@ def get_frequency_spectrum_energy(y, sr):
 
 def get_stereo_imaging_features(y, sr, bands=None):
     """
-    Analyze stereo imaging of an audio track.
-
+    Analyze stereo imaging of an audio track with perceptual loudness weighting.
+    
     Args:
-        y: stereo file
+        y: stereo or mono audio array
         sr: sample rate
         bands: dictionary of frequency bands
-
+        
     Returns:
         Dictionary with stereo imaging metrics.
     """
-
-
-    # Reduced FFT sizes for faster processing
-    n_fft = 1024
-    hop_length = 512
-
     if y is None or len(y) == 0:
         return {"error": "empty audio"}
 
-    # Default frequency bands
+    # Ensure stereo shape
+    y = np.atleast_2d(y)
+    if y.shape[0] == 1:
+        y = np.vstack([y, y])
+    elif y.shape[0] != 2:
+        y = y.T
+    left, right = y[0].astype(np.float64), y[1].astype(np.float64)
+
+    # --- Mid/Side signals ---
+    mid = (left + right) / 2
+    side = (left - right) / 2
+
+    mid_energy = float(np.sum(mid**2))
+    side_energy = float(np.sum(side**2))
+    ms_center_fraction = mid_energy / (mid_energy + side_energy + 1e-12)
+    ms_side_fraction = side_energy / (mid_energy + side_energy + 1e-12)
+
+    # --- Global correlation & LR balance ---
+    rms_L, rms_R = np.sqrt(np.mean(left**2)), np.sqrt(np.mean(right**2))
+    lr_balance = (rms_L - rms_R) / max(rms_L + rms_R, 1e-12)
+    correlation = float(np.corrcoef(left, right)[0, 1]) if left.std() > 1e-12 and right.std() > 1e-12 else 1.0
+
+    # --- STFT ---
+    n_fft, hop_length = 1024, 512
+    S_left = librosa.stft(left, n_fft=n_fft, hop_length=hop_length)
+    S_right = librosa.stft(right, n_fft=n_fft, hop_length=hop_length)
+    freqs = librosa.fft_frequencies(sr=sr, n_fft=n_fft)
+
     if bands is None:
         bands = {
             "Sub": (20, 60),
@@ -394,94 +422,57 @@ def get_stereo_imaging_features(y, sr, bands=None):
             "Air": (8001, min(sr//2, 20000))
         }
 
-    y = np.asarray(y)
-
-    # Ensure stereo shape: (2, n)
-    if y.ndim == 1:
-        y = np.vstack([y, y])
-    elif y.ndim == 2 and y.shape[1] == 2:
-        y = y.T
-    elif y.ndim == 2 and y.shape[0] == 2:
-        pass
-    else:
-        raise ValueError("Audio must be shape (n,), (n,2) or (2,n)")
-
-    left = y[0].astype(np.float64)
-    right = y[1].astype(np.float64)
-
-    # --- Global RMS and balance ---
-    rms_L = np.sqrt(np.mean(left**2))
-    rms_R = np.sqrt(np.mean(right**2))
-    lr_balance = (rms_L - rms_R) / max(rms_L + rms_R, 1e-12)
-
-    # --- Correlation ---
-    if left.std() < 1e-12 or right.std() < 1e-12:
-        correlation = 1.0 if np.allclose(left, right) else 0.0
-    else:
-        correlation = float(np.corrcoef(left, right)[0, 1])
-
-    # --- Mid / Side signals ---
-    mid = (left + right) / 2
-    side = (left - right) / 2
-    mid_energy = float(np.sum(mid**2))
-    side_energy = float(np.sum(side**2))
-    ms_center_fraction = mid_energy / max(mid_energy + side_energy, 1e-12)
-    ms_side_fraction = side_energy / max(mid_energy + side_energy, 1e-12)
-
-    # --- STFT ---
-    S_left = np.abs(librosa.stft(left, n_fft=n_fft, hop_length=hop_length))
-    S_right = np.abs(librosa.stft(right, n_fft=n_fft, hop_length=hop_length))
-    freqs = librosa.fft_frequencies(sr=sr, n_fft=n_fft)
-
-    # --- Per-band mid/side energy and width ---
+    # --- Per-band mid/side energy ---
     band_ms = {}
     band_widths = {}
+    S_mid = (S_left + S_right) / 2
+    S_side = (S_left - S_right) / 2
+
+    # LUFS meter for perceptual weighting
+    meter = pyln.Meter(sr, block_size=0.4)  # 400ms blocks
+    stereo_signal = np.vstack([left, right]).T
+    total_loudness = meter.integrated_loudness(stereo_signal)
+
     for name, (f_low, f_high) in bands.items():
-        f_high = min(f_high if f_high else sr/2, sr/2)
         mask = (freqs >= f_low) & (freqs <= f_high)
         if not np.any(mask):
             band_ms[name] = {"mid_energy": 0.0, "side_energy": 0.0}
             band_widths[name] = 0.0
             continue
 
-        L_mag = S_left[mask, :]
-        R_mag = S_right[mask, :]
+        # Energy per band
+        band_mid_energy = float(np.sum(np.abs(S_mid[mask, :])**2))
+        band_side_energy = float(np.sum(np.abs(S_side[mask, :])**2))
 
-        L_energy = float(np.sum(L_mag**2))
-        R_energy = float(np.sum(R_mag**2))
+        # Weight by LUFS
+        band_signal = stereo_signal[:, int(mask.nonzero()[0][0]):int(mask.nonzero()[0][-1])+1]
+        band_loudness = meter.integrated_loudness(band_signal) if band_signal.size > 0 else 0
+        weight = 10**(band_loudness / 20)
 
-        band_mid_energy = max((L_energy + R_energy + 2.0 * np.sum(L_mag * R_mag)) / 4.0, 0.0)
-        band_side_energy = max((L_energy + R_energy - 2.0 * np.sum(L_mag * R_mag)) / 4.0, 0.0)
+        band_ms[name] = {"mid_energy": band_mid_energy * weight, "side_energy": band_side_energy * weight}
+        denom = band_ms[name]["mid_energy"] + band_ms[name]["side_energy"]
+        band_widths[name] = band_ms[name]["side_energy"] / denom if denom > 1e-12 else 0.0
 
-        band_ms[name] = {"mid_energy": band_mid_energy, "side_energy": band_side_energy}
-        denom = band_mid_energy + band_side_energy
-        band_widths[name] = band_side_energy / denom if denom > 1e-12 else 0.0
+    # --- Frame-wise width & balance ---
+    frame_mid_rms = np.sqrt(np.mean(np.abs(S_mid)**2, axis=0))
+    frame_side_rms = np.sqrt(np.mean(np.abs(S_side)**2, axis=0))
+    frame_width = frame_side_rms / (frame_mid_rms + frame_side_rms + 1e-12)
 
-    # --- Frame-wise width and balance ---
-    frames = S_left.shape[1]
-    frame_mid = np.sum((S_left + S_right)**2, axis=0) / 4
-    frame_side = np.sum((S_left - S_right)**2, axis=0) / 4
-    frame_width = frame_side / (frame_mid + frame_side + 1e-12)
-
-    mean_frame_width = float(np.mean(frame_width))
-    std_frame_width = float(np.std(frame_width))
-
+    mean_frame_width, std_frame_width = float(np.mean(frame_width)), float(np.std(frame_width))
     frame_rms_L = librosa.feature.rms(y=left, frame_length=n_fft, hop_length=hop_length)[0]
     frame_rms_R = librosa.feature.rms(y=right, frame_length=n_fft, hop_length=hop_length)[0]
     frame_balance = (frame_rms_L - frame_rms_R) / (frame_rms_L + frame_rms_R + 1e-12)
-    mean_frame_balance = float(np.mean(frame_balance))
-    std_frame_balance = float(np.std(frame_balance))
+    mean_frame_balance, std_frame_balance = float(np.mean(frame_balance)), float(np.std(frame_balance))
 
-    # --- Results ---
     return {
         "rms_left": float(rms_L),
         "rms_right": float(rms_R),
         "lr_balance": float(lr_balance),
         "correlation": float(correlation),
-        "mid_energy": float(mid_energy),
-        "side_energy": float(side_energy),
-        "ms_center_fraction": float(ms_center_fraction),
-        "ms_side_fraction": float(ms_side_fraction),
+        "mid_energy": mid_energy,
+        "side_energy": side_energy,
+        "ms_center_fraction": ms_center_fraction,
+        "ms_side_fraction": ms_side_fraction,
         "band_ms": band_ms,
         "band_widths": band_widths,
         "mean_frame_width": mean_frame_width,
