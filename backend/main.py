@@ -24,16 +24,34 @@ app.add_middleware(
 
 # --- ENDPOINTS ---
 
-@app.post("/analyze")
+# @app.post("/analyze")
+# @limiter.limit("5/minute") # Limit amount of request per IP
+# async def analyze(request: Request, file:UploadFile = File(...)):
+#     return await process_file(file)
+
+# @app.post("/analyze_reference")
+# @limiter.limit("5/minute")
+# async def analyze_reference(request: Request, file:UploadFile = File(...)):
+#     return await process_file(file)
+
+# @app.post("/generate_report")
+# async def report_generator(payload: dict):
+#     return await generate_report(payload)
+
+@app.post("/analyze_and_report")
 @limiter.limit("5/minute") # Limit amount of request per IP
-async def analyze(request: Request, file:UploadFile = File(...)):
-    return await process_file(file)
+async def analyze_and_report(request: Request, file:UploadFile = File(...)):
+    try:
+        features = await process_file(file)
+    except Exception as e:
+        print(f"Error in generating features: {e}")
 
-@app.post("/analyze_reference")
-@limiter.limit("5/minute")
-async def analyze_reference(request: Request, file:UploadFile = File(...)):
-    return await process_file(file)
+    try:
+        report = generate_report(features)
+    except Exception as e:
+        print(f"Error in generating a report: {e}")
 
-@app.post("/generate_report")
-async def report_generator(features: dict):
-    return await generate_report(features)
+    return {
+        "features": features,
+        "report": report
+    }

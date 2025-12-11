@@ -95,7 +95,7 @@ def analyze_uploaded_track_complete(audio_bytes: bytes, mime_type: str):
     if wav_bytes:
         single_time = time.time()
         try:
-            transient_features = get_transient_features(y_mono, sr_mono, max_duration=180)
+            transient_features = get_transient_features(y_mono, sr_mono, max_duration=120)
         except Exception as e:
             print(f"Skipping transient features: {e}")
         transient_time = time.time() - single_time
