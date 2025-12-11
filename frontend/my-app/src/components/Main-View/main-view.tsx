@@ -11,7 +11,7 @@ type AnalysisReport = {
 
 export default function MainView() {
   const [mainReport, setMainReport] = useState<AnalysisReport | null>(null);
-  const [refReport, setRefReport] = useState<AnalysisReport | null>(null);
+  // const [refReport, setRefReport] = useState<AnalysisReport | null>(null);
 
   const uploadMain = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files![0];
@@ -19,7 +19,7 @@ export default function MainView() {
     form.append("file", file);
 
     try {
-      const res = await fetch("http://localhost:8000/analyze", {
+      const res = await fetch("http://localhost:8000/analyze_and_report", {
         method: "POST",
         body: form,
       });
@@ -30,22 +30,22 @@ export default function MainView() {
     }
   };
 
-  const uploadRef = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files![0];
-    const form = new FormData();
-    form.append("file", file);
+  // const uploadRef = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = e.target.files![0];
+  //   const form = new FormData();
+  //   form.append("file", file);
 
-    try {
-      const res = await fetch("http://localhost:8000/analyze_reference", {
-        method: "POST",
-        body: form,
-      });
+  //   try {
+  //     const res = await fetch("http://localhost:8000/analyze_reference", {
+  //       method: "POST",
+  //       body: form,
+  //     });
 
-      setRefReport(await res.json());
-    } catch (err) {
-      console.error("Reference Track Analysis Failed", { err });
-    }
-  };
+  //     setRefReport(await res.json());
+  //   } catch (err) {
+  //     console.error("Reference Track Analysis Failed", { err });
+  //   }
+  // };
 
   return (
     <div style={{ padding: 30 }}>
@@ -53,7 +53,7 @@ export default function MainView() {
 
       <input type="file" onChange={uploadMain} />
 
-      <input type="file" onChange={uploadRef} />
+      {/* <input type="file" onChange={uploadRef} /> */}
 
       {mainReport && (
         <div style={{ marginTop: 30 }}>
@@ -68,7 +68,7 @@ export default function MainView() {
         </div>
       )}
 
-      {refReport && (
+      {/* {refReport && (
         <div style={{ marginTop: 30 }}>
           <h2>Analysis Report</h2>
 
@@ -79,7 +79,7 @@ export default function MainView() {
             </div>
           ))}
         </div>
-      )}
+      )} */}
     </div>
   );
 }
