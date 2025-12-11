@@ -1,4 +1,4 @@
-from .audio_features import (
+from .audio.audio_features import (
     load_audio,
     get_tempo_features, 
     get_loudness_features, 
@@ -7,7 +7,7 @@ from .audio_features import (
     get_transient_features, 
     get_stereo_imaging_features
 )
-from .audio_converter import convert_to_wav_in_memory
+from analysis.audio.audio_converter import convert_to_wav_in_memory
 import time
 import librosa
 
