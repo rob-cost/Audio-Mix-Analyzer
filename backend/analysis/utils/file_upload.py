@@ -1,4 +1,4 @@
-from fastapi import UploadFile
+from fastapi import UploadFile, HTTPException
 
 from analysis.utils.helper import to_python
 from analysis.utils.process_pool_executor import run_in_processpool
@@ -30,10 +30,10 @@ async def process_file(file:UploadFile):
     audio_bytes = await file.read()
 
     if len(audio_bytes) > MAX_FILE_BYTES:
-        return {"error": f"File too large. Max is {MAX_FILE_SIZE_MB} MB."}
+        raise HTTPException(status_code=400, detail=f"File too large. Max is {MAX_FILE_SIZE_MB} MB.")
     
     if file.content_type not in ALLOWED_TYPES:
-        return {"error": "Unsupported audio format"}
+        raise HTTPException(status_code=400, detail="Unsupported audio format")
     
     try:
         report = await run_in_processpool(audio_bytes, file.content_type)
