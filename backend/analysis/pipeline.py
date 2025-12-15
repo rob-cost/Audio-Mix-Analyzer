@@ -14,7 +14,7 @@ import librosa
     
 def analyze_uploaded_track_complete(audio_bytes: bytes, mime_type: str):
     """
-    Extract ALL features in one pass - most efficient approach.
+    Extract ALL features in one pass.
     Loads audio only once per sample rate needed.
     """
 

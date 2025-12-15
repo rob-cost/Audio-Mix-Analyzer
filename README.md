@@ -61,13 +61,11 @@ The AI returns:
 - **Librosa**
 - **Groq API / LLM**
 - **ProcessPoolExecutor**
-- **Python 3.10+**
 
 ### Frontend
 
 - **React**
 - **TypeScript**
-- **Vite / Webpack**
 - **Fetch API**
 
 ---

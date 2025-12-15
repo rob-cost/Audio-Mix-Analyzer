@@ -47,6 +47,7 @@ async def analyze_and_report(
             raise HTTPException(status_code=500, detail="Error processing the main track file.")
     else:
         try:
+            #  Process both files concurrently
             features, ref_features = await asyncio.gather(
                 process_file(track_file),
                 process_file(reference_file)
@@ -58,6 +59,7 @@ async def analyze_and_report(
 
     # Generate AI Report
     try:
+        # Generate report using the features
         print("GENERATING AI REPORT")
         report = generate_report(features, ref_features)
     except Exception as e:
