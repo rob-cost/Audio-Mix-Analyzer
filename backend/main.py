@@ -59,7 +59,6 @@ async def analyze_and_report(
 
     # Generate AI Report
     try:
-        # Generate report using the features
         print("GENERATING AI REPORT")
         report = generate_report(features, ref_features)
     except Exception as e:

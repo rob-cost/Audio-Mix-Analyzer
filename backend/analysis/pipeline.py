@@ -24,11 +24,12 @@ def analyze_uploaded_track_complete(audio_bytes: bytes, mime_type: str):
     # --- CONVERT AUDIO TO WAV ---
 
     single_time = time.time()
+
     try:
         wav_bytes = convert_to_wav_in_memory(audio_bytes, mime_type)
     except ValueError as e:
         print(f"Skipping conversion: {e}")
-        wav_bytes = None  # mark as unavailable
+        wav_bytes = None # mark as unavailable
     
     conversion_time = time.time() - single_time
     print(f"\n{'='*50}")
@@ -37,7 +38,6 @@ def analyze_uploaded_track_complete(audio_bytes: bytes, mime_type: str):
 
 
     # --- LOAD AUDIO ---
-    
     try:
 
         # Load audio in stereo
@@ -77,6 +77,7 @@ def analyze_uploaded_track_complete(audio_bytes: bytes, mime_type: str):
     loudness_features = None
     if wav_bytes:
         single_time = time.time()
+
         try:
             loudness_features = get_loudness_features(y_stereo, sr_stereo)
         except Exception as e:
