@@ -5,5 +5,6 @@ export type MainViewState = {
   refFile: File | null;
   mainReport: AnalysisReport | null;
   isAnalyzing: boolean;
+  loadingStep: string;
   error: string | null;
 };

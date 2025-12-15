@@ -16,6 +16,9 @@ export default function MainView() {
   const [refFile, setRefFile] = useState<MainViewState["refFile"]>(null);
   const [mainReport, setMainReport] = useState<AnalysisReport | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [loadingStep, setLoadingStep] = useState<MainViewState["loadingStep"]>(
+    "Initializing analysis..."
+  );
   const [error, setError] = useState<MainViewState["error"]>(null);
 
   const uploadMain = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,16 +41,19 @@ export default function MainView() {
     if (!mainFile) return;
 
     setIsAnalyzing(true);
+    setLoadingStep("Uploading files...");
     setError(null);
 
     try {
       const data = await analyzeTrackApi(mainFile, refFile ?? undefined);
       setMainReport(data);
+      console.log("Analysis completed and report generated");
     } catch (err) {
       console.error("Analysis failed:", err);
       setError("Analysis failed. Please try again.");
     } finally {
       setIsAnalyzing(false);
+      setLoadingStep("");
     }
   };
 
@@ -94,8 +100,11 @@ export default function MainView() {
           <div className="main-view__loading-title">
             🎵 Analyzing your audio...
           </div>
-          <div className="main-view__loading-subtitle">
-            This may take a few moments
+          <div className="main-view__loading-subtitle">{loadingStep}</div>
+          <div className="main-view__spinner">
+            <span></span>
+            <span></span>
+            <span></span>
           </div>
         </div>
       )}

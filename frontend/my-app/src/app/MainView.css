@@ -17,6 +17,37 @@
     margin-bottom: 30px;
 }
 
+.main-view__spinner {
+    display: flex;
+    justify-content: center;
+    margin-top: 15px;
+    gap: 8px;
+}
+
+.main-view__spinner span {
+    display: block;
+    width: 12px;
+    height: 12px;
+    background-color: #4caf50;
+    border-radius: 50%;
+    animation: bounce 0.6s infinite alternate;
+}
+
+.main-view__spinner span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.main-view__spinner span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+    to {
+        opacity: 0.3;
+        transform: translateY(-10px);
+    }
+}
+
 .main-view__error {
     margin-top: 20px;
     padding: 15px;

@@ -10,7 +10,6 @@ export function UploadSection({
   onMainUpload,
   onRefUpload,
   onAnalyze,
-  onClear,
 }: UploadSectionProps) {
   return (
     <div className="upload-container">
@@ -44,18 +43,6 @@ export function UploadSection({
         </button>
       </div>
 
-      {/* Clear button */}
-      {(mainFile || refFile) && (
-        <div className="actions">
-          <button
-            className="btn btn-clear"
-            onClick={onClear}
-            disabled={isAnalyzing}
-          >
-            Clear Files
-          </button>
-        </div>
-      )}
       <div className="upload-info">
         Supported formats: MP3, WAV, OGG, FLAC. | Max file size: 100 MB
       </div>
