@@ -7,8 +7,29 @@ type Report = {
   strengths?: string[];
   areas_for_improvement?: string[];
   suggestions?: string[];
-  processing_recommendations?: Record<string, unknown>;
-  reference_comparison?: Record<string, unknown>;
+
+  // Objects with string values
+  loudness_analysis?: Record<string, string>;
+  spectral_analysis?: Record<string, string>;
+  dynamics_analysis?: Record<string, string>;
+  stereo_analysis?: Record<string, string>;
+
+  processing_recommendations?: {
+    priority_order?: string[];
+    eq_adjustments?: string[];
+    compression?: string[];
+    stereo_processing?: string[];
+    limiting?: string;
+    other_processing?: string[];
+  };
+
+  reference_comparison?: {
+    loudness_difference?: string;
+    spectral_difference?: Record<string, string>;
+    dynamics_difference?: string;
+    stereo_difference?: string;
+    competitive_assessment?: string[];
+  };
 
   features?: Features;
   ref_features?: Features;
