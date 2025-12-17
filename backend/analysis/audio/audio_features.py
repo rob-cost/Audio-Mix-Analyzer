@@ -246,24 +246,10 @@ def get_harmonic_content_features(y, sr):
     # Convert it into np array
     y_harm = np.asarray(y_harm)
 
-    # --- OPTION 1 ---
-    # chroma = librosa.feature.chroma_cqt(y=y_harm, sr=sr, bins_per_octave=36, n_octaves=7) # faster approach
-    # chroma_mean = chroma.mean(axis=1)
 
     # --- OPTION 2 ---
     chroma = librosa.feature.chroma_stft(y=y_harm, sr=sr, n_fft=2048, hop_length=512)
     chroma_mean = chroma.mean(axis=1)
-
-
-    # --- OPTION 1 ---
-    # try:
-    #     # Get prelevant key
-    #     estimated_key = librosa.key.key_detect(y_harm, sr=sr)
-    # except:
-    # # Fallback to simple chroma
-    #     key_index = np.argmax(chroma_mean)
-    #     pitch_names = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"]
-    #     estimated_key = pitch_names[key_index]  
 
 
     # --- OPTION 2 ---
@@ -273,11 +259,11 @@ def get_harmonic_content_features(y, sr):
 
 
     # Harmonic richness
-    S = np.abs(librosa.stft(y_harm, n_fft=2048))
-    spectral_centroid = librosa.feature.spectral_centroid(S=S, sr=sr) # calculate brigthness
-    spectral_bandwidth = librosa.feature.spectral_bandwidth(S=S, sr=sr)
-    spectral_contrast = librosa.feature.spectral_contrast(S=S, sr=sr) # calculate harmonic presence
-    spectral_rolloff = librosa.feature.spectral_rolloff(S=S, sr=sr)
+    # S = np.abs(librosa.stft(y_harm, n_fft=2048))
+    # spectral_centroid = librosa.feature.spectral_centroid(S=S, sr=sr) # calculate brigthness
+    # spectral_bandwidth = librosa.feature.spectral_bandwidth(S=S, sr=sr)
+    # spectral_contrast = librosa.feature.spectral_contrast(S=S, sr=sr) # calculate harmonic presence
+    # spectral_rolloff = librosa.feature.spectral_rolloff(S=S, sr=sr)
 
     # Tonal stability
     chroma_std = chroma.std(axis=1)   # variability of each pitch class
@@ -286,13 +272,13 @@ def get_harmonic_content_features(y, sr):
     
     features = []
     features.append({
-        "harmonic_centroid": float(spectral_centroid.mean()),
-        "harmonic_bandwidth": float(spectral_bandwidth.mean()),
-        "harmonic_contrast": float(spectral_contrast.mean()),
-        "harmonic_rolloff": float(spectral_rolloff.mean()),
+        # "harmonic_centroid": float(spectral_centroid.mean()),
+        # "harmonic_bandwidth": float(spectral_bandwidth.mean()),
+        # "harmonic_contrast": float(spectral_contrast.mean()),
+        # "harmonic_rolloff": float(spectral_rolloff.mean()),
         "tonal_stability": float(tonal_stability),
         "estimated_key": estimated_key,
-        "chroma_mean": chroma_mean.tolist(),
+        # "chroma_mean": chroma_mean.tolist(),
     })
     return features[0]
 

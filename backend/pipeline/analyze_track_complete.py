@@ -1,4 +1,4 @@
-from .audio.audio_features import (
+from analysis.audio.audio_features import (
     load_audio,
     get_tempo_features, 
     get_loudness_features, 
@@ -91,20 +91,22 @@ def analyze_uploaded_track_complete(audio_bytes: bytes, mime_type: str):
 
 
     # --- TRANSIENT FEATURES ---
-
-    transient_features = None
-    if wav_bytes:
-        single_time = time.time()
-        try:
-            transient_features = get_transient_features(y_mono, sr_mono, max_duration=120)
-        except Exception as e:
-            print(f"Skipping transient features: {e}")
-        transient_time = time.time() - single_time
-        print(f"\n{'='*50}")
-        print("TRANSIENT FEATURES")
-        print(transient_features)
-        print(f"Transient feature extraction took {transient_time:.2f} seconds.")
-        print(f"\n{'='*50}")
+    if loudness_features["dynamic_range_db"] < 8:
+        transient_features = None
+        if wav_bytes:
+            single_time = time.time()
+            try:
+                transient_features = get_transient_features(y_mono, sr_mono, max_duration=120)
+            except Exception as e:
+                print(f"Skipping transient features: {e}")
+            transient_time = time.time() - single_time
+            print(f"\n{'='*50}")
+            print("TRANSIENT FEATURES")
+            print(transient_features)
+            print(f"Transient feature extraction took {transient_time:.2f} seconds.")
+            print(f"\n{'='*50}")
+    else:
+        transient_features = {"note": "Transient features skipped."}
 
 
     # --- HARMONIC FEATURES ---

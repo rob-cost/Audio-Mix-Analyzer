@@ -3,7 +3,7 @@ import asyncio
 
 from concurrent.futures import ProcessPoolExecutor
 
-from analysis.pipeline import analyze_uploaded_track_complete
+from pipeline.analyze_track_complete import analyze_uploaded_track_complete
 
 
 """

@@ -13,7 +13,7 @@ MODEL = "openai/gpt-oss-120b"
 
 
 
-def generate_report(features: dict, features_reference: dict = None):
+async def generate_report(features: dict, features_reference: dict = None):
     """
     Generates a comprehensive audio analysis report.
     
@@ -53,8 +53,6 @@ def generate_report(features: dict, features_reference: dict = None):
     safe_response = jsonable_encoder(raw_response)
     dict_response = json.loads(safe_response)
     
-    print(f"Type: {type(dict_response)}")
-
     # Define expected categories for validation
     required_categories = [
         "summary",
@@ -83,7 +81,6 @@ def generate_report(features: dict, features_reference: dict = None):
     
     print(f"\n{'='*50}")
     print(f"ANALYSIS COMPLETED")
-    print(f"Genre Context: {dict_response.get('genre_context', 'N/A')}")
     if features_reference is not None:
         print(f"Reference Comparison: {'Included' if dict_response.get('reference_comparison') else 'Missing'}")
     print(f"AI Analysis completed in: {end_time:.2f} seconds")
