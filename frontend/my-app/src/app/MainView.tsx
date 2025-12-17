@@ -8,17 +8,17 @@ import { analyzeTrack as analyzeTrackApi } from "../services/api/analysisService
 import "./MainView.css";
 
 import { UploadSection } from "../features/upload/UploadAnalyze";
-import { AnalysisReportDisplay } from "../features/analysis/AnalysisReport";
-import { MetricsDashboard } from "../features/analysis/MetricsDashboard";
+// import { ReportOverview } from "../features/analysis/AnalysisReport";
+// import { MetricsDashboard } from "../features/analysis/MetricsDashboard";
+import AnalysisTabs from "../features/analysis/AnalysisTabs";
 
 export default function MainView() {
   const [mainFile, setMainFile] = useState<MainViewState["mainFile"]>(null);
   const [refFile, setRefFile] = useState<MainViewState["refFile"]>(null);
   const [mainReport, setMainReport] = useState<AnalysisReport | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [loadingStep, setLoadingStep] = useState<MainViewState["loadingStep"]>(
-    "Initializing analysis..."
-  );
+  const [loadingStep, setLoadingStep] =
+    useState<MainViewState["loadingStep"]>("");
   const [error, setError] = useState<MainViewState["error"]>(null);
 
   const uploadMain = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,13 +41,13 @@ export default function MainView() {
     if (!mainFile) return;
 
     setIsAnalyzing(true);
-    setLoadingStep("Uploading files...");
     setError(null);
 
     try {
       const data = await analyzeTrackApi(mainFile, refFile ?? undefined);
       setMainReport(data);
       console.log("Analysis completed and report generated");
+      console.log("Main Report", { mainReport });
     } catch (err) {
       console.error("Analysis failed:", err);
       setError("Analysis failed. Please try again.");
@@ -112,8 +112,7 @@ export default function MainView() {
       {/* Metrics Dashboard & Main Report */}
       {mainReport && !isAnalyzing && (
         <section className="main-view__results">
-          <MetricsDashboard {...mainReport} />
-          <AnalysisReportDisplay {...mainReport} />
+          <AnalysisTabs report={mainReport} />
         </section>
       )}
     </div>

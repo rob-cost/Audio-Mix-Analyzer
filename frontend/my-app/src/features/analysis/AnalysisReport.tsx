@@ -1,9 +1,9 @@
 import type { AnalysisReport } from "../../types/analysis";
 
-export function AnalysisReportDisplay(report: AnalysisReport) {
+export function ReportOverview(report: AnalysisReport) {
   return (
     <div style={{ marginTop: 30 }}>
-      <h2>Analysis Report</h2>
+      <h2>Overview</h2>
 
       {/* Summary Section */}
       {report.report?.summary && (
@@ -19,23 +19,14 @@ export function AnalysisReportDisplay(report: AnalysisReport) {
           <p>{report.report.summary}</p>
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* Genre Context */}
-      {report.report?.genre_context && (
-        <div
-          style={{
-            marginBottom: 20,
-            padding: 15,
-            backgroundColor: "#fff3e0",
-            borderRadius: 5,
-          }}
-        >
-          <h3>Genre Context</h3>
-          <p>
-            <strong>Genre:</strong> {report.report.genre_context}
-          </p>
-        </div>
-      )}
+export function ReportLoudnessAndDynamics(report: AnalysisReport) {
+  return (
+    <div style={{ marginTop: 30 }}>
+      <h2>Loudness & Dynamics</h2>
 
       {/* Loudness Analysis */}
       {report.report?.loudness_analysis && (
@@ -50,29 +41,6 @@ export function AnalysisReportDisplay(report: AnalysisReport) {
           <h3> Loudness Analysis</h3>
           <ul>
             {Object.entries(report.report.loudness_analysis).map(
-              ([key, value]) => (
-                <li key={key}>
-                  <strong>{key}:</strong> {value}
-                </li>
-              )
-            )}
-          </ul>
-        </div>
-      )}
-
-      {/* Spectral Analysis */}
-      {report.report?.spectral_analysis && (
-        <div
-          style={{
-            marginBottom: 20,
-            padding: 15,
-            backgroundColor: "#e8f5e9",
-            borderRadius: 5,
-          }}
-        >
-          <h3> Spectral Analysis</h3>
-          <ul>
-            {Object.entries(report.report.spectral_analysis).map(
               ([key, value]) => (
                 <li key={key}>
                   <strong>{key}:</strong> {value}
@@ -105,6 +73,14 @@ export function AnalysisReportDisplay(report: AnalysisReport) {
           </ul>
         </div>
       )}
+    </div>
+  );
+}
+
+export function ReportStereoImage(report: AnalysisReport) {
+  return (
+    <div style={{ marginTop: 30 }}>
+      <h2>Stereo Image & Spectro Analysis</h2>
 
       {/* Stereo Analysis */}
       {report.report?.stereo_analysis && (
@@ -129,8 +105,39 @@ export function AnalysisReportDisplay(report: AnalysisReport) {
         </div>
       )}
 
+      {/* Spectral Analysis */}
+      {report.report?.spectral_analysis && (
+        <div
+          style={{
+            marginBottom: 20,
+            padding: 15,
+            backgroundColor: "#e8f5e9",
+            borderRadius: 5,
+          }}
+        >
+          <h3> Spectral Analysis</h3>
+          <ul>
+            {Object.entries(report.report.spectral_analysis).map(
+              ([key, value]) => (
+                <li key={key}>
+                  <strong>{key}:</strong> {value}
+                </li>
+              )
+            )}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function ReportStregthAndImprovement(report: AnalysisReport) {
+  return (
+    <div style={{ marginTop: 30 }}>
+      <h2>Stereo Image & Spectro Analysis</h2>
+
       {/* Strengths */}
-      {report.report?.strengths && report.report?.strengths.length > 0 && (
+      {report.report?.strengths && report.report.strengths.length > 0 && (
         <div
           style={{
             marginBottom: 20,
@@ -150,7 +157,7 @@ export function AnalysisReportDisplay(report: AnalysisReport) {
 
       {/* Areas for Improvement */}
       {report.report?.areas_for_improvement &&
-        report.report?.areas_for_improvement.length > 0 && (
+        report.report.areas_for_improvement.length > 0 && (
           <div
             style={{
               marginBottom: 20,
@@ -167,9 +174,17 @@ export function AnalysisReportDisplay(report: AnalysisReport) {
             </ul>
           </div>
         )}
+    </div>
+  );
+}
+
+export function ReportSuggestion(report: AnalysisReport) {
+  return (
+    <div style={{ marginTop: 30 }}>
+      <h2>Stereo Image & Spectro Analysis</h2>
 
       {/* Suggestions */}
-      {report.report?.suggestions && report.report?.suggestions.length > 0 && (
+      {report.report?.suggestions && report.report.suggestions.length > 0 && (
         <div
           style={{
             marginBottom: 20,
@@ -198,18 +213,25 @@ export function AnalysisReportDisplay(report: AnalysisReport) {
           }}
         >
           <h3>🎛️ Processing Recommendations</h3>
-
           <ul>
             {Object.entries(report.report.processing_recommendations).map(
               ([key, value]) => (
                 <li key={key}>
-                  <strong>{key}:</strong> {value}
+                  <strong>{key}:</strong> {String(value)}
                 </li>
               )
             )}
           </ul>
         </div>
       )}
+    </div>
+  );
+}
+
+export function ReportReferenceComparison(report: AnalysisReport) {
+  return (
+    <div style={{ marginTop: 30 }}>
+      <h2>Stereo Image & Spectro Analysis</h2>
 
       {/* Reference Comparison */}
       {report.report?.reference_comparison && (
@@ -235,23 +257,46 @@ export function AnalysisReportDisplay(report: AnalysisReport) {
                       ))}
                     </ul>
                   )}
-                  {typeof value === "object" && !Array.isArray(value) && (
-                    <ul>
-                      {Object.entries(value).map(([subKey, subValue]) => (
-                        <li key={subKey}>
-                          <strong>{subKey}:</strong> {subValue}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  {typeof value === "object" &&
+                    value !== null &&
+                    !Array.isArray(value) && (
+                      <ul>
+                        {Object.entries(value).map(([subKey, subValue]) => (
+                          <li key={subKey}>
+                            <strong>{subKey}:</strong> {String(subValue)}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                 </li>
               )
             )}
           </ul>
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* Technical Details (Collapsible)
+/* Genre Context */
+
+// {report.report?.genre_context && (
+//   <div
+//     style={{
+//       marginBottom: 20,
+//       padding: 15,
+//       backgroundColor: "#fff3e0",
+//       borderRadius: 5,
+//     }}
+//   >
+//     <h3>Genre Context</h3>
+//     <p>
+//       <strong>Genre:</strong> {report.report.genre_context}
+//     </p>
+//   </div>
+// )}
+
+/* Technical Details (Collapsible)
       <details style={{ marginTop: 20 }}>
         <summary
           style={{
@@ -282,7 +327,4 @@ export function AnalysisReportDisplay(report: AnalysisReport) {
             </div>
           ))}
         </div>
-      </details> */}
-    </div>
-  );
-}
+      </details> */
