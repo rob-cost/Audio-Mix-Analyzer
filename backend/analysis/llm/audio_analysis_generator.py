@@ -13,7 +13,7 @@ MODEL = "openai/gpt-oss-120b"
 
 
 
-async def generate_report(features: dict, features_reference: dict = None):
+def generate_report(features: dict, features_reference: dict = None):
     """
     Generates a comprehensive audio analysis report.
     
