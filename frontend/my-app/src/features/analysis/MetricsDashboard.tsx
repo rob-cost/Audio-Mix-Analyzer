@@ -2,8 +2,12 @@ import type { AnalysisReport } from "../../types/analysis";
 
 import { MetricCard } from "../../components/MetricCard/MetricCard";
 
-export function MetricsDashboard(report: AnalysisReport) {
+export function MetricsDashboard({ report }: { report: AnalysisReport }) {
   // Extract metrics from report
+  const bpm = report.features?.tempo_features?.tempo_bpm ?? "N/A";
+  const key = report.features?.harmonic_features?.estimated_key ?? "N/A";
+  const stere_image =
+    report.features?.stereo_image_features?.stereo_width_label ?? "N/A";
   const lufs = report.features?.loudness_features?.loudness_lufs ?? "N/A";
   const rms = report.features?.loudness_features?.rms_db ?? "N/A";
   const peak = report.features?.loudness_features?.true_peak_db ?? "N/A";
@@ -21,6 +25,30 @@ export function MetricsDashboard(report: AnalysisReport) {
           marginTop: 15,
         }}
       >
+        <MetricCard
+          title="Tempo BPM"
+          value={typeof bpm === "number" ? bpm.toFixed(0) : bpm}
+          unit="BPM"
+          description="Beats Per Minute (BPM) – measures the tempo of your track, indicating how fast or slow it feels."
+          color="#f36021ff"
+        />
+
+        <MetricCard
+          title="Key"
+          value={typeof key === "string" ? key : key}
+          unit=""
+          description="Beats Per Minute (BPM) – measures the tempo of your track, indicating how fast or slow it feels."
+          color="#e521f3ff"
+        />
+
+        <MetricCard
+          title="Stereo Image"
+          value={typeof stere_image === "string" ? stere_image : stere_image}
+          unit=""
+          description="Stereo Image – measures the perceived width of your track, indicating how narrow or wide the sound appears in the stereo field. Helps ensure clarity, balance, and spatial definition."
+          color="#21a6f3ff"
+        />
+
         <MetricCard
           title="LUFS"
           value={typeof lufs === "number" ? lufs.toFixed(1) : lufs}

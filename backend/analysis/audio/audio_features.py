@@ -119,67 +119,56 @@ def get_loudness_features(y_stereo, sr):
         y_stereo = np.vstack([y_stereo, y_stereo])
     left, right = y_stereo
 
-    # Mono signal for integrated loudness & peak calculation
     mono = (left + right) / 2
 
-    # --- Integrated Loudness (LUFS) ---
-    meter = pyln.Meter(sr)  # Creates LUFS meter
-    stereo_signal = y_stereo.T  # shape: (samples, channels)
-    loudness_lufs = meter.integrated_loudness(stereo_signal)
+    # Integrated LUFS
+    meter = pyln.Meter(sr)
+    loudness_lufs = meter.integrated_loudness(y_stereo.T)
 
-    # --- RMS ---
+    # RMS
     rms = np.sqrt(np.mean(mono**2))
-    rms_db = 20 * np.log10(rms + 1e-12) 
+    rms_db = 20 * np.log10(rms + 1e-12)
 
-    # --- RMS per frame ---
-    rms_frame = librosa.feature.rms(y=mono, frame_length=2048, hop_length=512)[0]
+    # Dynamic range (400 ms blocks)
+    block_size = int(sr * 0.4)
+    n_blocks = len(mono) // block_size
+    if n_blocks > 0:
+        blocks = mono[:n_blocks * block_size].reshape(n_blocks, block_size)
+        block_rms = np.sqrt(np.mean(blocks**2, axis=1))
+        dynamic_range_db = 20 * np.log10(
+            np.max(block_rms) / (np.min(block_rms) + 1e-12)
+        )
+    else:
+        dynamic_range_db = 0.0
 
-    # --- Dynamic Range (improved) ---
-    # Use LUFS-like short-term blocks for more accurate DR
-    block_size_sec = 0.4
-    block_size_samples = int(sr * block_size_sec)
-    rms_blocks = [
-        np.sqrt(np.mean(mono[i:i+block_size_samples]**2) + 1e-12)
-        for i in range(0, len(mono), block_size_samples)
-    ]
-    dynamic_range_db = 20 * np.log10(max(rms_blocks) / (min(rms_blocks) + 1e-12))
-
-    # --- Peak amplitude ---
+    # Peak
     peak = np.max(np.abs(mono))
     peak_db = 20 * np.log10(peak + 1e-12)
 
-    # --- True Peak ---
-    upsample = 2  # 4× oversampling
-    y_os = resample_poly(mono, upsample, 1)
+    # True peak (2× oversampling is enough for analysis)
+    y_os = resample_poly(mono, 2, 1)
     true_peak = np.max(np.abs(y_os))
     true_peak_db = 20 * np.log10(true_peak + 1e-12)
 
-    # --- Crest Factor ---
-    crest_factor = peak / (rms + 1e-12)
-    crest_factor_db = 20 * np.log10(crest_factor + 1e-12)
+    # Crest factor
+    crest_factor_db = 20 * np.log10((peak / (rms + 1e-12)) + 1e-12)
 
-    # --- Loudness evolution (per 30s section) ---
-    section_length_sec = 30
-    frame_len = sr * section_length_sec
-    num_sections = int(np.ceil(len(mono) / frame_len))
-
-    section_rms = [
-        float(np.sqrt(np.mean(mono[int(i*frame_len):int(min((i+1)*frame_len, len(mono))) ]**2)))
-        for i in range(num_sections)
+    # Loudness evolution (30s RMS)
+    section_len = int(sr * 30)
+    loudness_evolution = [
+        float(np.sqrt(np.mean(mono[i:i + section_len]**2)))
+        for i in range(0, len(mono), section_len)
     ]
 
-    # --- Collect features ---
-    features = {
+    return {
         "loudness_lufs": float(loudness_lufs),
         "rms_db": float(rms_db),
         "dynamic_range_db": float(dynamic_range_db),
         "peak_db": float(peak_db),
         "true_peak_db": float(true_peak_db),
         "crest_factor_db": float(crest_factor_db),
-        "loudness_evolution": section_rms
+        "loudness_evolution": loudness_evolution,
     }
-
-    return features
 
 
 def get_transient_features(y, sr, max_duration = None, onset_env=None):
@@ -355,18 +344,68 @@ def get_frequency_spectrum_energy(y, sr):
     }
 
 
+import numpy as np
+import librosa
+
 def get_stereo_imaging_features(y, sr, bands=None):
     """
-    Analyze stereo imaging of an audio track with perceptual loudness weighting.
-    
+    Analyze stereo imaging of an audio track with perceptual band weighting.
+
     Args:
         y: stereo or mono audio array
         sr: sample rate
-        bands: dictionary of frequency bands
+        bands: dictionary of frequency bands (optional)
         
     Returns:
-        Dictionary with stereo imaging metrics.
+        Dictionary with stereo imaging metrics, including a perceptual
+        stereo width score and label.
     """
+
+    # --- Helper functions ---
+    def clamp(x, lo=0.0, hi=1.0):
+        return max(lo, min(hi, x))
+
+    PERCEPTUAL_BAND_WEIGHTS = {
+        "Sub": 0.05,
+        "Bass": 0.1,
+        "Low_mids": 0.25,
+        "Mids": 0.4,
+        "High_mids": 0.7,
+        "Air": 0.9,
+    }
+
+    def perceptual_band_width(band_widths):
+        weighted_sum = 0.0
+        weight_total = 0.0
+        for band, width in band_widths.items():
+            w = PERCEPTUAL_BAND_WEIGHTS.get(band, 0.0)
+            weighted_sum += w * width
+            weight_total += w
+        return weighted_sum / weight_total if weight_total > 0 else 0.0
+
+    def stereo_width_score(ms_side_fraction, mean_frame_width, band_widths):
+        # Use structural, temporal, and perceptual components
+        band_component = perceptual_band_width(band_widths)
+        score = (
+            0.45 * clamp(ms_side_fraction * 5.0) +
+            0.30 * clamp(mean_frame_width) +
+            0.25 * clamp(band_component)
+        )
+        return clamp(score)
+
+    def stereo_width_label(score):
+        if score < 0.1:
+            return "Mono / Very Narrow"
+        elif score < 0.25:
+            return "Narrow"
+        elif score < 0.5:
+            return "Balanced"
+        elif score < 0.75:
+            return "Wide"
+        else:
+            return "Very Wide"
+
+    # --- Input validation ---
     if y is None or len(y) == 0:
         return {"error": "empty audio"}
 
@@ -405,66 +444,48 @@ def get_stereo_imaging_features(y, sr, bands=None):
             "Low_mids": (201, 600),
             "Mids": (601, 3000),
             "High_mids": (3001, 8000),
-            "Air": (8001, min(sr//2, 20000))
+            "Air": (8001, min(sr // 2, 20000))
         }
 
-    # --- Per-band mid/side energy ---
-    band_ms = {}
-    band_widths = {}
+    # --- Per-band stereo width ---
     S_mid = (S_left + S_right) / 2
     S_side = (S_left - S_right) / 2
-
-    # LUFS meter for perceptual weighting
-    meter = pyln.Meter(sr, block_size=0.4)  # 400ms blocks
-    stereo_signal = np.vstack([left, right]).T
-    total_loudness = meter.integrated_loudness(stereo_signal)
+    band_widths = {}
 
     for name, (f_low, f_high) in bands.items():
         mask = (freqs >= f_low) & (freqs <= f_high)
         if not np.any(mask):
-            band_ms[name] = {"mid_energy": 0.0, "side_energy": 0.0}
             band_widths[name] = 0.0
             continue
 
-        # Energy per band
         band_mid_energy = float(np.sum(np.abs(S_mid[mask, :])**2))
         band_side_energy = float(np.sum(np.abs(S_side[mask, :])**2))
+        denom = band_mid_energy + band_side_energy
+        band_widths[name] = band_side_energy / denom if denom > 1e-12 else 0.0
 
-        # Weight by LUFS
-        band_signal = stereo_signal[:, int(mask.nonzero()[0][0]):int(mask.nonzero()[0][-1])+1]
-        band_loudness = meter.integrated_loudness(band_signal) if band_signal.size > 0 else 0
-        weight = 10**(band_loudness / 20)
-
-        band_ms[name] = {"mid_energy": band_mid_energy * weight, "side_energy": band_side_energy * weight}
-        denom = band_ms[name]["mid_energy"] + band_ms[name]["side_energy"]
-        band_widths[name] = band_ms[name]["side_energy"] / denom if denom > 1e-12 else 0.0
-
-    # --- Frame-wise width & balance ---
+    # --- Frame-wise width ---
     frame_mid_rms = np.sqrt(np.mean(np.abs(S_mid)**2, axis=0))
     frame_side_rms = np.sqrt(np.mean(np.abs(S_side)**2, axis=0))
     frame_width = frame_side_rms / (frame_mid_rms + frame_side_rms + 1e-12)
-
     mean_frame_width, std_frame_width = float(np.mean(frame_width)), float(np.std(frame_width))
-    frame_rms_L = librosa.feature.rms(y=left, frame_length=n_fft, hop_length=hop_length)[0]
-    frame_rms_R = librosa.feature.rms(y=right, frame_length=n_fft, hop_length=hop_length)[0]
-    frame_balance = (frame_rms_L - frame_rms_R) / (frame_rms_L + frame_rms_R + 1e-12)
-    mean_frame_balance, std_frame_balance = float(np.mean(frame_balance)), float(np.std(frame_balance))
+
+    # --- Compute stereo width score & label ---
+    width_score = stereo_width_score(ms_side_fraction, mean_frame_width, band_widths)
+    width_label = stereo_width_label(width_score)
 
     return {
-        "rms_left": float(rms_L),
-        "rms_right": float(rms_R),
-        "lr_balance": float(lr_balance),
-        "correlation": float(correlation),
-        "mid_energy": mid_energy,
-        "side_energy": side_energy,
-        "ms_center_fraction": ms_center_fraction,
+        # Core stereo image metrics (for final report)
+        "stereo_width_score": width_score,
+        "stereo_width_label": width_label,
         "ms_side_fraction": ms_side_fraction,
-        "band_ms": band_ms,
+        "correlation": float(correlation),
+        "lr_balance": float(lr_balance),
+
+        # Advanced / optional metrics (for detailed tabs)
         "band_widths": band_widths,
         "mean_frame_width": mean_frame_width,
-        "std_frame_width": std_frame_width,
-        "mean_frame_balance": mean_frame_balance,
-        "std_frame_balance": std_frame_balance
+        "std_frame_width": std_frame_width
     }
+
 
 

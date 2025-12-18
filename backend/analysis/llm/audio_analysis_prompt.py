@@ -29,14 +29,33 @@ COMPARISON REQUIRED: Compare the target track against the reference track. The r
     analysis_instructions = """
 ANALYSIS REQUIREMENTS:
 
-1. LOUDNESS & HEADROOM ANALYSIS
-   - Evaluate integrated LUFS (target: -14 to -8 LUFS for streaming, -6 to -4 for club/radio)
-   - Check true peak levels (should be below -1.0 dBTP for streaming)
-   - Assess crest factor and dynamic range (DR meter scale)
-   - Identify headroom availability
-   - Determine if over-compressed or too quiet
+1. SUMMARY
+   - Generate a high-level overview of an audio track, taking into account its genre context and overall audio characteristic.   
+   - In case a reference track is provided, provide a general comaprison between the both.
 
-2. SPECTRAL ANALYSIS
+2. LOUDNESS & DYNAMICS ANALYSIS
+   - Evaluate the track's overall loudness in relation to streaming and club standards.
+   - Evaluate the track's overall dynamic
+   - Assess peak safety and headroom
+   - Analyze dynamic behavior at both micro and macro levels
+   - Determine the degree and quality of compression
+   - Identify potential artifacts or energy inconsistencies
+   - Provide technical insight, not mixing instructions
+   - In case a reference track is provided, provide a comaprison between the both.
+
+3 . STEREO IMAGE ANALYSIS
+   - Provide a general overview of the track's stereo image.
+   - The overview should naturally mention: Overall stereo width (narrow, balanced, wide, very wide) without score, 
+      mono compatibility and phase safety, 
+      left-right balance and pan distribution, 
+      center content clarity and focus
+      side channel information quality and spatial clarity
+      overall correlation
+      center content clarity and focus
+   - If a reference track is provided, include a comparison summary, highlighting differences in width, side energy, and balance.
+   - Include band-wise correlation (Sub, Bass, Low mids, Mids, High mids, Air) in a concise, readable way without mentioning numbers.
+   
+4. SPECTRAL ANALYSIS
    - Analyze frequency balance across all bands:
      * Sub Bass (20-60 Hz)
      * Bass (60-250 Hz)
@@ -49,35 +68,20 @@ ANALYSIS REQUIREMENTS:
    - Identify problematic frequencies, resonances, harshness, or muddy regions
    - Assess overall tonal balance (bright, dark, balanced, etc.)
 
-3. DYNAMIC CHARACTERISTICS
-   - Evaluate compression amount (light/medium/heavy/over-compressed)
-   - Assess transient preservation quality
-   - Check for micro-dynamics (natural/controlled/squashed)
-   - Evaluate macro-dynamics range
-   - Identify pumping, breathing, or artifacts
-
-4. STEREO IMAGE ANALYSIS
-   - Assess stereo width (narrow/balanced/wide/excessive)
-   - Check mono compatibility and phase issues
-   - Evaluate pan distribution and balance
-   - Assess center content clarity and focus
-   - Evaluate side information quality
-   - Check correlation values for phase relationships
-
-5. IDENTIFY STRENGTHS
+6. IDENTIFY STRENGTHS
    - List 3-5 specific positive aspects of the mix
    - Be concrete and technical
 
-6. IDENTIFY AREAS FOR IMPROVEMENT
+7. IDENTIFY AREAS FOR IMPROVEMENT
    - List 3-5 specific issues or limitations
    - Prioritize by impact on overall quality
 
-7. PROVIDE ACTIONABLE SUGGESTIONS
+8. PROVIDE ACTIONABLE SUGGESTIONS
    - Give specific, implementable advice
    - Use exact values when possible
    - Prioritize suggestions by importance
 
-8. PROCESSING RECOMMENDATIONS
+9. PROCESSING RECOMMENDATIONS
    - Provide detailed technical instructions:
      * EQ adjustments with specific frequencies, gain amounts, and Q values
      * Compression settings (ratio, threshold, attack, release)
@@ -90,7 +94,7 @@ ANALYSIS REQUIREMENTS:
 
     if features_reference is not None:
         analysis_instructions += """
-9. REFERENCE COMPARISON (REQUIRED)
+10. REFERENCE COMPARISON (REQUIRED)
    - Compare loudness levels (LUFS difference, dynamic range)
    - Compare spectral balance (frequency by frequency)
    - Compare dynamic processing (compression levels, transient response)
@@ -108,13 +112,39 @@ Return ONLY valid JSON with NO markdown formatting (no asterisks, no bold, no it
 JSON structure:
 {
   "summary": "Brief overview of the overall mix quality and primary characteristics",
-  "genre_context": "Identified genre and tempo style context",
-  "loudness_analysis": {
-    "lufs": "Integrated LUFS value and assessment",
-    "true_peak": "True peak level and headroom status",
-    "dynamic_range": "DR value and compression assessment",
-    "headroom": "Available headroom and recommendations"
-  },
+
+  "loudness_dynamics_analysis": {
+    "overview": "Brief overview of the overall loudness and dynamic quality",
+
+    "loudness_analysis": {
+      "integrated_lufs": "Assessment of overall loudness in streaming and club context",
+      "true_peak_headroom": "True peak behavior and headroom safety",
+      "loudness_consistency": "Stability of loudness across the track"
+      },
+
+    "dynamics_analysis": {
+      "dynamic_range": "Overall dynamic range and openness",
+      "compression_character": "Light / moderate / heavy / over-compressed assessment",
+      "transient_quality": "Punch and transient preservation",
+      "micro_dynamics": "Short-term dynamic movement",
+      "macro_dynamics": "Section-to-section energy contrast",
+      "artifacts": "Pumping, breathing, or processing artifacts"
+    },
+  }
+
+  "stereo_analysis": {
+  "overview": "",
+
+  "correlation_per_band": {
+    "Sub": "Correlation feedback for Sub frequencies",
+    "Bass": "Correlation feedback for Bass frequencies",
+    "Low_mids": "Correlation feedback for Low mids",
+    "Mids": "Correlation feedback for Mids",
+    "High_mids": "Correlation feedback for High mids",
+    "Air": "Correlation feedback for Air frequencies"
+   },
+  }
+
   "spectral_analysis": {
     "low_end": "20-250 Hz analysis and assessment",
     "low_mids": "250-500 Hz analysis and assessment",
@@ -125,20 +155,7 @@ JSON structure:
     "balance": "Overall tonal balance description",
     "problem_frequencies": "List of problematic frequency ranges with specific Hz values"
   },
-  "dynamics_analysis": {
-    "compression_level": "Light/Medium/Heavy/Over-compressed assessment",
-    "transient_quality": "Transient preservation evaluation",
-    "micro_dynamics": "Micro-dynamic behavior",
-    "macro_dynamics": "Overall dynamic range assessment",
-    "artifacts": "Any pumping, breathing, or distortion issues"
-  },
-  "stereo_analysis": {
-    "width": "Stereo width assessment",
-    "mono_compatibility": "Phase relationship and mono fold-down quality",
-    "balance": "Left-right balance and pan distribution",
-    "center_focus": "Center content clarity",
-    "correlation": "Stereo correlation assessment"
-  },
+
   "strengths": [
     "Specific strength 1",
     "Specific strength 2",

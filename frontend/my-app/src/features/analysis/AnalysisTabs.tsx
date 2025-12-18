@@ -8,20 +8,26 @@ import {
 } from "./AnalysisReport";
 import { ReportSuggestion } from "./AnalysisReport";
 import { ReportStereoImage } from "./AnalysisReport";
+import { MetricsDashboard } from "./MetricsDashboard";
 
 export default function AnalysisTabs({ report }: { report: AnalysisReport }) {
   console.log("Main report in Analysis Tab:", report);
   const tabData = [
     {
       label: "Overview",
-      content: <ReportOverview report={report} />,
+      content: (
+        <>
+          <ReportOverview report={report} />
+          <MetricsDashboard report={report} />
+        </>
+      ),
     },
     {
-      label: "Loudness & Dynamics",
+      label: "Loudness & Dynamic",
       content: <ReportLoudnessAndDynamics report={report} />,
     },
     {
-      label: "Stere Image",
+      label: "Stereo Image",
       content: <ReportStereoImage report={report} />,
     },
     {

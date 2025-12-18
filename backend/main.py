@@ -82,4 +82,12 @@ async def analyze(
     # Generate AI report
     report = generate_report(features, ref_features)
 
+    print(f"\n{'+'*50}")
+    print(f"FINAL REPORT:")
+    print(features)
+    print(f"\n{'+'*50}")
+    print(f"\n{'+'*50}")
+    print(f"AI REPORT:")
+    print(report['loudness_dynamics_analysis'])
+    print(f"\n{'+'*50}")
     return {"features": features, "ref_features": ref_features, "report": report}

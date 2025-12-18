@@ -1,17 +1,24 @@
 // --- TYPES ---
 
-// types generated from ai report structure
+// --- ANALYSIS REPORT ---
+export type AnalysisReport = {
+  report?: Report;
+  features?: Features;
+};
+
+// --- TYPE REPORT ---
+
 type Report = {
   summary?: string;
-  genre_context?: string;
+  loudness_dynamics_analysis?: LoudnessDynamicsAnalysis;
+  spectral_analysis?: SpectralAnalysis;
   strengths?: string[];
   areas_for_improvement?: string[];
   suggestions?: string[];
 
   // Objects with string values
-  loudness_analysis?: Record<string, string>;
-  spectral_analysis?: Record<string, string>;
-  dynamics_analysis?: Record<string, string>;
+  // loudness_analysis?: Record<string, string>;
+  // dynamics_analysis?: Record<string, string>;
   stereo_analysis?: Record<string, string>;
 
   processing_recommendations?: {
@@ -35,10 +42,23 @@ type Report = {
   ref_features?: Features;
 };
 
-// Types from features
+type SpectralAnalysis = {
+  overview?: string;
+  correlation_per_band?: Record<string, string>;
+};
+
+type LoudnessDynamicsAnalysis = {
+  overview?: string;
+  loudness_analysis?: Record<string, string>;
+  dynamics_analysis?: Record<string, string>;
+};
+
+// --- FEATURES TYPES ---
 type Features = {
   tempo_features?: TempoFeatures;
   loudness_features?: LoudnessFeatures;
+  harmonic_features?: HarmonicFeatures;
+  stereo_image_features?: StereoImageFeatures;
 };
 
 type TempoFeatures = {
@@ -52,8 +72,11 @@ type LoudnessFeatures = {
   crest_factor_db?: number;
 };
 
-// AnalysisReport
-export type AnalysisReport = {
-  report?: Report;
-  features?: Features;
+type HarmonicFeatures = {
+  tonal_stability?: number;
+  estimated_key?: string;
+};
+
+type StereoImageFeatures = {
+  stereo_width_label?: string;
 };

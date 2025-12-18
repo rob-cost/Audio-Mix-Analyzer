@@ -15,7 +15,6 @@ export function ReportOverview({ report }: { report: AnalysisReport }) {
             borderRadius: 5,
           }}
         >
-          <h3> Overview</h3>
           <p>{report.report?.summary}</p>
         </div>
       )}
@@ -28,86 +27,92 @@ export function ReportLoudnessAndDynamics({
 }: {
   report: AnalysisReport;
 }) {
+  const loudness_dynamics = report.report?.loudness_dynamics_analysis;
+
+  if (!loudness_dynamics) return null;
+
   return (
     <div style={{ marginTop: 30 }}>
       <h2>Loudness & Dynamics</h2>
 
       {/* Loudness Analysis */}
-      {report.report?.loudness_analysis && (
-        <div
-          style={{
-            marginBottom: 20,
-            padding: 15,
-            backgroundColor: "#e8f5e9",
-            borderRadius: 5,
-          }}
-        >
-          <h3> Loudness Analysis</h3>
-          <ul>
-            {Object.entries(report.report.loudness_analysis).map(
-              ([key, value]) => (
-                <li key={key}>
-                  <strong>{key}:</strong> {value}
-                </li>
-              )
-            )}
-          </ul>
-        </div>
-      )}
-
-      {/* Dynamic Analysis */}
-      {report.report?.dynamics_analysis && (
-        <div
-          style={{
-            marginBottom: 20,
-            padding: 15,
-            backgroundColor: "#e8f5e9",
-            borderRadius: 5,
-          }}
-        >
-          <h3> Dynamic Analysis</h3>
-          <ul>
-            {Object.entries(report.report.dynamics_analysis).map(
-              ([key, value]) => (
-                <li key={key}>
-                  <strong>{key}:</strong> {value}
-                </li>
-              )
-            )}
-          </ul>
-        </div>
-      )}
+      {loudness_dynamics.loudness_analysis &&
+        loudness_dynamics.dynamics_analysis && (
+          <div
+            style={{
+              marginBottom: 20,
+              padding: 15,
+              backgroundColor: "#e8f5e9",
+              borderRadius: 5,
+            }}
+          >
+            <h4> Overview</h4>
+            <p>{loudness_dynamics.overview}</p>
+            <div>
+              <h4>Loudness Analysis</h4>
+              <ul>
+                {Object.entries(loudness_dynamics.loudness_analysis).map(
+                  ([key, value]) => (
+                    <li key={key}>
+                      <strong>{key}:</strong> {value}
+                    </li>
+                  )
+                )}
+              </ul>
+            </div>
+            <div>
+              <h4>Dynamic Analysis</h4>
+              <ul>
+                {Object.entries(loudness_dynamics.dynamics_analysis).map(
+                  ([key, value]) => (
+                    <li key={key}>
+                      <strong>{key}:</strong> {value}
+                    </li>
+                  )
+                )}
+              </ul>
+            </div>
+          </div>
+        )}
     </div>
   );
 }
 
 export function ReportStereoImage({ report }: { report: AnalysisReport }) {
+  const stereo = report.report?.stereo_analysis;
+
+  if (!stereo) return null;
+
   return (
     <div style={{ marginTop: 30 }}>
-      <h2>Stereo Image & Spectro Analysis</h2>
+      <h2>Stereo Image & Spectral Analysis</h2>
 
-      {/* Stereo Analysis */}
-      {report.report?.stereo_analysis && (
-        <div
-          style={{
-            marginBottom: 20,
-            padding: 15,
-            backgroundColor: "#e8f5e9",
-            borderRadius: 5,
-          }}
-        >
-          <h3> Stereo Analysis</h3>
-          <ul>
-            {Object.entries(report.report.stereo_analysis).map(
-              ([key, value]) => (
-                <li key={key}>
-                  <strong>{key}:</strong> {value}
-                </li>
-              )
-            )}
-          </ul>
-        </div>
-      )}
+      <div
+        style={{
+          marginBottom: 20,
+          padding: 15,
+          backgroundColor: "#e8f5e9",
+          borderRadius: 5,
+        }}
+      >
+        <h4>Overview</h4>
+        {stereo.overview && <p>{stereo.overview}</p>}
+
+        {stereo.correlation_per_band && (
+          <>
+            <h4>Correlation per band</h4>
+            <ul>
+              {Object.entries(stereo.correlation_per_band).map(
+                ([band, value]) => (
+                  <li key={band}>
+                    <strong>{band}:</strong> {value}
+                  </li>
+                )
+              )}
+            </ul>
+          </>
+        )}
+      </div>
 
       {/* Spectral Analysis */}
       {report.report?.spectral_analysis && (
@@ -120,15 +125,6 @@ export function ReportStereoImage({ report }: { report: AnalysisReport }) {
           }}
         >
           <h3> Spectral Analysis</h3>
-          <ul>
-            {Object.entries(report.report.spectral_analysis).map(
-              ([key, value]) => (
-                <li key={key}>
-                  <strong>{key}:</strong> {value}
-                </li>
-              )
-            )}
-          </ul>
         </div>
       )}
     </div>

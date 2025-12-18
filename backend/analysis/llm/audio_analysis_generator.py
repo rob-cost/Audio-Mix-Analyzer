@@ -56,10 +56,8 @@ def generate_report(features: dict, features_reference: dict = None):
     # Define expected categories for validation
     required_categories = [
         "summary",
-        "genre_context",
-        "loudness_analysis",
+        "loudness_dynamics_analysis",
         "spectral_analysis",
-        "dynamics_analysis",
         "stereo_analysis",
         "strengths",
         "areas_for_improvement",
@@ -80,7 +78,6 @@ def generate_report(features: dict, features_reference: dict = None):
     end_time = time.time() - start_time
     
     print(f"\n{'='*50}")
-    print(f"ANALYSIS COMPLETED")
     if features_reference is not None:
         print(f"Reference Comparison: {'Included' if dict_response.get('reference_comparison') else 'Missing'}")
     print(f"AI Analysis completed in: {end_time:.2f} seconds")
