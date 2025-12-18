@@ -12,6 +12,8 @@ interface TabsProps {
 export function Tabs({ tabs }: TabsProps) {
   const [activeIndex, setActiveIndex] = useState(0);
 
+  console.log("Tabs content", tabs[activeIndex].content);
+
   return (
     <div>
       {/* Tab headers */}

@@ -1,11 +1,11 @@
 import type { AnalysisReport } from "../../types/analysis";
 
-export function ReportOverview(report: AnalysisReport) {
+export function ReportOverview({ report }: { report: AnalysisReport }) {
   return (
     <div style={{ marginTop: 30 }}>
       <h2>Overview</h2>
 
-      {/* Summary Section */}
+      {/* Overviews */}
       {report.report?.summary && (
         <div
           style={{
@@ -15,15 +15,19 @@ export function ReportOverview(report: AnalysisReport) {
             borderRadius: 5,
           }}
         >
-          <h3>Summary</h3>
-          <p>{report.report.summary}</p>
+          <h3> Overview</h3>
+          <p>{report.report?.summary}</p>
         </div>
       )}
     </div>
   );
 }
 
-export function ReportLoudnessAndDynamics(report: AnalysisReport) {
+export function ReportLoudnessAndDynamics({
+  report,
+}: {
+  report: AnalysisReport;
+}) {
   return (
     <div style={{ marginTop: 30 }}>
       <h2>Loudness & Dynamics</h2>
@@ -77,7 +81,7 @@ export function ReportLoudnessAndDynamics(report: AnalysisReport) {
   );
 }
 
-export function ReportStereoImage(report: AnalysisReport) {
+export function ReportStereoImage({ report }: { report: AnalysisReport }) {
   return (
     <div style={{ marginTop: 30 }}>
       <h2>Stereo Image & Spectro Analysis</h2>
@@ -131,10 +135,14 @@ export function ReportStereoImage(report: AnalysisReport) {
   );
 }
 
-export function ReportStregthAndImprovement(report: AnalysisReport) {
+export function ReportStregthAndImprovement({
+  report,
+}: {
+  report: AnalysisReport;
+}) {
   return (
     <div style={{ marginTop: 30 }}>
-      <h2>Stereo Image & Spectro Analysis</h2>
+      <h2>Strengths & Improvements</h2>
 
       {/* Strengths */}
       {report.report?.strengths && report.report.strengths.length > 0 && (
@@ -178,10 +186,10 @@ export function ReportStregthAndImprovement(report: AnalysisReport) {
   );
 }
 
-export function ReportSuggestion(report: AnalysisReport) {
+export function ReportSuggestion({ report }: { report: AnalysisReport }) {
   return (
     <div style={{ marginTop: 30 }}>
-      <h2>Stereo Image & Spectro Analysis</h2>
+      <h2>Suggestions</h2>
 
       {/* Suggestions */}
       {report.report?.suggestions && report.report.suggestions.length > 0 && (
@@ -228,10 +236,14 @@ export function ReportSuggestion(report: AnalysisReport) {
   );
 }
 
-export function ReportReferenceComparison(report: AnalysisReport) {
+export function ReportReferenceComparison({
+  report,
+}: {
+  report: AnalysisReport;
+}) {
   return (
     <div style={{ marginTop: 30 }}>
-      <h2>Stereo Image & Spectro Analysis</h2>
+      <h2>Reference Comparison</h2>
 
       {/* Reference Comparison */}
       {report.report?.reference_comparison && (
