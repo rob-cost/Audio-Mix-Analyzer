@@ -9,7 +9,6 @@ dependencies = [
     "fastapi>=0.123.5",
     "groq>=0.37.1",
     "librosa>=0.11.0",
-    "openl3>=0.4.2",
     "pandas>=2.3.3",
     "pydub>=0.25.1",
     "pyloudnorm>=0.1.1",
