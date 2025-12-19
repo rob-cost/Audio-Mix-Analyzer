@@ -1,4 +1,4 @@
-import type { AnalysisReport } from "../../types/analysis";
+import type { AnalysisReportTypes } from "../../types/analysis";
 import { Tabs } from "../../components/Tabs/tabs";
 import {
   ReportLoudnessAndDynamics,
@@ -9,9 +9,12 @@ import {
 import { ReportSuggestion } from "./AnalysisReport";
 import { ReportStereoImage } from "./AnalysisReport";
 import { MetricsDashboard } from "./MetricsDashboard";
-
-export default function AnalysisTabs({ report }: { report: AnalysisReport }) {
-  console.log("Main report in Analysis Tab:", report);
+import SpectralCurveChart from "../../components/Graphics/spectrum_energies_graphic";
+export default function AnalysisTabs({
+  report,
+}: {
+  report: AnalysisReportTypes;
+}) {
   const tabData = [
     {
       label: "Overview",
@@ -19,6 +22,7 @@ export default function AnalysisTabs({ report }: { report: AnalysisReport }) {
         <>
           <ReportOverview report={report} />
           <MetricsDashboard report={report} />
+          <SpectralCurveChart report={report} />
         </>
       ),
     },
@@ -27,7 +31,7 @@ export default function AnalysisTabs({ report }: { report: AnalysisReport }) {
       content: <ReportLoudnessAndDynamics report={report} />,
     },
     {
-      label: "Stereo Image",
+      label: "Stereo Image & Spectral Analysis",
       content: <ReportStereoImage report={report} />,
     },
     {

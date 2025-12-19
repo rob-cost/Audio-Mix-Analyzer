@@ -344,9 +344,6 @@ def get_frequency_spectrum_energy(y, sr):
     }
 
 
-import numpy as np
-import librosa
-
 def get_stereo_imaging_features(y, sr, bands=None):
     """
     Analyze stereo imaging of an audio track with perceptual band weighting.
@@ -395,7 +392,7 @@ def get_stereo_imaging_features(y, sr, bands=None):
 
     def stereo_width_label(score):
         if score < 0.1:
-            return "Mono / Very Narrow"
+            return "Very Narrow"
         elif score < 0.25:
             return "Narrow"
         elif score < 0.5:

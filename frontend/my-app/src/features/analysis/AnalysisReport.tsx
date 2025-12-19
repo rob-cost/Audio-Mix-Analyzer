@@ -1,6 +1,6 @@
-import type { AnalysisReport } from "../../types/analysis";
+import type { AnalysisReportTypes } from "../../types/analysis";
 
-export function ReportOverview({ report }: { report: AnalysisReport }) {
+export function ReportOverview({ report }: { report: AnalysisReportTypes }) {
   return (
     <div style={{ marginTop: 30 }}>
       <h2>Overview</h2>
@@ -25,7 +25,7 @@ export function ReportOverview({ report }: { report: AnalysisReport }) {
 export function ReportLoudnessAndDynamics({
   report,
 }: {
-  report: AnalysisReport;
+  report: AnalysisReportTypes;
 }) {
   const loudness_dynamics = report.report?.loudness_dynamics_analysis;
 
@@ -78,14 +78,16 @@ export function ReportLoudnessAndDynamics({
   );
 }
 
-export function ReportStereoImage({ report }: { report: AnalysisReport }) {
+export function ReportStereoImage({ report }: { report: AnalysisReportTypes }) {
   const stereo = report.report?.stereo_analysis;
+  const spectral_analysis = report.report?.spectral_analysis;
 
   if (!stereo) return null;
+  if (!spectral_analysis) return null;
 
   return (
     <div style={{ marginTop: 30 }}>
-      <h2>Stereo Image & Spectral Analysis</h2>
+      <h2>Stereo Image</h2>
 
       <div
         style={{
@@ -115,7 +117,8 @@ export function ReportStereoImage({ report }: { report: AnalysisReport }) {
       </div>
 
       {/* Spectral Analysis */}
-      {report.report?.spectral_analysis && (
+      <h2>Spectral Analysis</h2>
+      {spectral_analysis.overview && spectral_analysis.energy_bands && (
         <div
           style={{
             marginBottom: 20,
@@ -124,7 +127,19 @@ export function ReportStereoImage({ report }: { report: AnalysisReport }) {
             borderRadius: 5,
           }}
         >
-          <h3> Spectral Analysis</h3>
+          <h4>Overview</h4>
+          <p>{spectral_analysis.overview}</p>
+          <h4> Energy Bands</h4>
+          <ul>
+            {Object.entries(spectral_analysis.energy_bands).map(
+              ([band, value]) => (
+                <li key={band}>
+                  <strong>{band}</strong>
+                  {value}
+                </li>
+              )
+            )}
+          </ul>
         </div>
       )}
     </div>
@@ -134,7 +149,7 @@ export function ReportStereoImage({ report }: { report: AnalysisReport }) {
 export function ReportStregthAndImprovement({
   report,
 }: {
-  report: AnalysisReport;
+  report: AnalysisReportTypes;
 }) {
   return (
     <div style={{ marginTop: 30 }}>
@@ -182,7 +197,7 @@ export function ReportStregthAndImprovement({
   );
 }
 
-export function ReportSuggestion({ report }: { report: AnalysisReport }) {
+export function ReportSuggestion({ report }: { report: AnalysisReportTypes }) {
   return (
     <div style={{ marginTop: 30 }}>
       <h2>Suggestions</h2>
@@ -235,7 +250,7 @@ export function ReportSuggestion({ report }: { report: AnalysisReport }) {
 export function ReportReferenceComparison({
   report,
 }: {
-  report: AnalysisReport;
+  report: AnalysisReportTypes;
 }) {
   return (
     <div style={{ marginTop: 30 }}>

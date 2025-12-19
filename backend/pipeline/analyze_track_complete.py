@@ -3,7 +3,6 @@ from analysis.audio.audio_features import (
     get_tempo_features, 
     get_loudness_features, 
     get_frequency_spectrum_energy,
-    get_harmonic_content_features, 
     get_transient_features, 
     get_stereo_imaging_features
 )
@@ -46,8 +45,8 @@ def analyze_uploaded_track_complete(audio_bytes: bytes, mime_type: str):
         y_mono = librosa.to_mono(y_stereo)
         sr_mono = sr_stereo
         # Load audio for harmonic_features
-        y_harmonic = librosa.resample(y_mono, orig_sr=sr_mono, target_sr=22050)
-        sr_harmonic = 22050
+        # y_harmonic = librosa.resample(y_mono, orig_sr=sr_mono, target_sr=22050)
+        # sr_harmonic = 22050
         # Calculate onset
         onset_env = librosa.onset.onset_strength(y=y_mono, sr=sr_mono)
 
@@ -109,21 +108,21 @@ def analyze_uploaded_track_complete(audio_bytes: bytes, mime_type: str):
         transient_features = {"note": "Transient features skipped."}
 
 
-    # --- HARMONIC FEATURES ---
+    # --- HARMONIC FEATURES --- (currently disabled) ---
 
-    harmonic_features = None
-    if wav_bytes:
-        single_time = time.time()
-        try:
-            harmonic_features = get_harmonic_content_features(y_harmonic, sr_harmonic)
-        except Exception as e:
-            print(f"Skipping harmonic features: {e}")
-        harmonic_time = time.time() - single_time
-        print(f"\n{'='*50}")
-        print("HARMONIC FEATURES")
-        print(harmonic_features)
-        print(f"Harmonic content feature extraction took {harmonic_time:.2f} seconds.")
-        print(f"\n{'='*50}")
+    # harmonic_features = None
+    # if wav_bytes:
+    #     single_time = time.time()
+    #     try:
+    #         harmonic_features = get_harmonic_content_features(y_harmonic, sr_harmonic)
+    #     except Exception as e:
+    #         print(f"Skipping harmonic features: {e}")
+    #     harmonic_time = time.time() - single_time
+    #     print(f"\n{'='*50}")
+    #     print("HARMONIC FEATURES")
+    #     print(harmonic_features)
+    #     print(f"Harmonic content feature extraction took {harmonic_time:.2f} seconds.")
+    #     print(f"\n{'='*50}")
 
 
     # --- FREQUENCY SPECTRUM ENERGY ---
@@ -170,7 +169,7 @@ def analyze_uploaded_track_complete(audio_bytes: bytes, mime_type: str):
             "tempo_features": tempo_features,
             "loudness_features": loudness_features,
             "transient_features": transient_features,
-            "harmonic_features": harmonic_features,
+            # "harmonic_features": harmonic_features,
             "frequency_spectrum_energy": frequency_spectrum_energy,
             "stereo_image_features": stereo_imaging_features
         }

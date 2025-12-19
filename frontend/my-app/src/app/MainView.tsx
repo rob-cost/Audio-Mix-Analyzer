@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import type { AnalysisReport } from "../types/analysis";
+import type { AnalysisReportTypes } from "../types/analysis";
 import type { MainViewState } from "./types";
 
 import { analyzeTrack as analyzeTrackApi } from "../services/api/analysisService";
@@ -8,14 +8,14 @@ import { analyzeTrack as analyzeTrackApi } from "../services/api/analysisService
 import "./MainView.css";
 
 import { UploadSection } from "../features/upload/UploadAnalyze";
-// import { ReportOverview } from "../features/analysis/AnalysisReport";
-// import { MetricsDashboard } from "../features/analysis/MetricsDashboard";
 import AnalysisTabs from "../features/analysis/AnalysisTabs";
 
 export default function MainView() {
   const [mainFile, setMainFile] = useState<MainViewState["mainFile"]>(null);
   const [refFile, setRefFile] = useState<MainViewState["refFile"]>(null);
-  const [mainReport, setMainReport] = useState<AnalysisReport | null>(null);
+  const [mainReport, setMainReport] = useState<AnalysisReportTypes | null>(
+    null
+  );
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [loadingStep, setLoadingStep] =
     useState<MainViewState["loadingStep"]>("");

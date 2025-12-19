@@ -44,7 +44,7 @@ def generate_report(features: dict, features_reference: dict = None):
         ],
         response_format={"type": "json_object"},
         temperature=0.7,
-        max_tokens=4096
+        max_tokens=4000
     )
 
     raw_response = completion.choices[0].message.content

@@ -30,18 +30,33 @@ COMPARISON REQUIRED: Compare the target track against the reference track. The r
 ANALYSIS REQUIREMENTS:
 
 1. SUMMARY
-   - Generate a high-level overview of an audio track, taking into account its genre context and overall audio characteristic.   
-   - In case a reference track is provided, provide a general comaprison between the both.
+    Summarize the mix’s overall sound and character in a way that is clear and easy to understand for a non-technical listener.
+    Take the genre into account and describe how the track feels, highlighting its main strengths and any areas that limit clarity, impact, or balance.   
+        - The overview should:
+          Identify the tonal character of the mix (e.g. bright, dark, warm, aggressive, balanced)
+          Comment on transient clarity and punch
+          Describe spectral balance, including congestion or sparsity in key bands
+          Assess stereo image in broad terms (narrow, balanced, wide)
+          Comment on headroom and peak behavior
+          Identify primary limiting factors preventing the mix from sounding fully professional
+      - If a reference track is included:
+          Briefly compare overall tonal balance, dynamics, and spatial impression
+          Describe differences neutrally
+          Do not rank quality or give instructions
 
 2. LOUDNESS & DYNAMICS ANALYSIS
-   - Evaluate the track's overall loudness in relation to streaming and club standards.
-   - Evaluate the track's overall dynamic
-   - Assess peak safety and headroom
-   - Analyze dynamic behavior at both micro and macro levels
-   - Determine the degree and quality of compression
-   - Identify potential artifacts or energy inconsistencies
-   - Provide technical insight, not mixing instructions
-   - In case a reference track is provided, provide a comaprison between the both.
+    Generate a clear, easy-to-understand explanation of how loud, dynamic, and controlled the track feels to a listener, using simple language and focusing on listening impact rather than technical metrics.
+    Write for clients and artists, not audio engineers.
+    Explain what the numbers mean for the listening experience.
+    No mixing instructions — observation and interpretation only.
+    Neutral, professional, and reassuring tone.
+      - The overview should:
+        Evaluate the track's overall loudness in relation to streaming and club standards.
+        Describe how loud the track feels, Whether it feels open or dense.
+        How controlled or natural the dynamics are.
+        Mention loudness and compression in plain languag
+        Example phrasing: “consistently loud”, “very controlled”,“little contrast between sections”, “punchy but tightly limited”
+      - If a reference track is provided, compare the two at a high level, focusing on perceived loudness, punch, and openness
 
 3 . STEREO IMAGE ANALYSIS
    - Provide a general overview of the track's stereo image.
@@ -65,6 +80,7 @@ ANALYSIS REQUIREMENTS:
      * Presence (5-8 kHz)
      * Brilliance (8-12 kHz)
      * Air (12-20 kHz)
+   - Provide a general overview of the track's spectral energy.
    - Identify problematic frequencies, resonances, harshness, or muddy regions
    - Assess overall tonal balance (bright, dark, balanced, etc.)
 
@@ -111,50 +127,49 @@ Return ONLY valid JSON with NO markdown formatting (no asterisks, no bold, no it
 
 JSON structure:
 {
-  "summary": "Brief overview of the overall mix quality and primary characteristics",
+  "summary": "string",
 
   "loudness_dynamics_analysis": {
-    "overview": "Brief overview of the overall loudness and dynamic quality",
+    "overview": "string",
 
     "loudness_analysis": {
-      "integrated_lufs": "Assessment of overall loudness in streaming and club context",
-      "true_peak_headroom": "True peak behavior and headroom safety",
-      "loudness_consistency": "Stability of loudness across the track"
+      "integrated_lufs": "Describe if the track feels quiet, competitive, or very loud compared to typical releases.",
+      "true_peak_headroom": "Explain if the track is safely controlled or very close to its limits.",
+      "loudness_consistency": "Explain whether the track maintains a steady energy or changes noticeably over time."
       },
 
     "dynamics_analysis": {
-      "dynamic_range": "Overall dynamic range and openness",
-      "compression_character": "Light / moderate / heavy / over-compressed assessment",
-      "transient_quality": "Punch and transient preservation",
-      "micro_dynamics": "Short-term dynamic movement",
-      "macro_dynamics": "Section-to-section energy contrast",
-      "artifacts": "Pumping, breathing, or processing artifacts"
+      "dynamic_range": "Describe how much the track breathes or stays constant.",
+      "compression_character": "Explain whether the sound feels natural, dense, or heavily controlled.",
+      "transient_quality": "Comment on punch and clarity of hits without using technical terms.",
+      "artifacts": "Only mention if clearly present, using listener-oriented language."
     },
   }
 
-  "stereo_analysis": {
-  "overview": "",
-
-  "correlation_per_band": {
-    "Sub": "Correlation feedback for Sub frequencies",
-    "Bass": "Correlation feedback for Bass frequencies",
-    "Low_mids": "Correlation feedback for Low mids",
-    "Mids": "Correlation feedback for Mids",
-    "High_mids": "Correlation feedback for High mids",
-    "Air": "Correlation feedback for Air frequencies"
-   },
-  }
-
   "spectral_analysis": {
-    "low_end": "20-250 Hz analysis and assessment",
-    "low_mids": "250-500 Hz analysis and assessment",
-    "mids": "500-2000 Hz analysis and assessment",
-    "upper_mids": "2-5 kHz analysis and assessment",
-    "highs": "5-10 kHz analysis and assessment",
-    "air": "10-20 kHz analysis and assessment",
-    "balance": "Overall tonal balance description",
-    "problem_frequencies": "List of problematic frequency ranges with specific Hz values"
+    "overview": "string",
+    "energy_bands": {
+      "Low_end": "analysis and assessment",
+      "Low_mids": "analysis and assessment",
+      "Mids": "analysis and assessment",
+      "Upper_mids": "analysis and assessment",
+      "Highs": "analysis and assessment",
+      "Air": "analysis and assessment",
+    }
   },
+
+  "stereo_analysis": {
+    "overview": "",
+
+    "correlation_per_band": {
+      "Sub": "Correlation feedback for Sub frequencies",
+      "Bass": "Correlation feedback for Bass frequencies",
+      "Low_mids": "Correlation feedback for Low mids",
+      "Mids": "Correlation feedback for Mids",
+      "High_mids": "Correlation feedback for High mids",
+      "Air": "Correlation feedback for Air frequencies"
+    },
+  }
 
   "strengths": [
     "Specific strength 1",

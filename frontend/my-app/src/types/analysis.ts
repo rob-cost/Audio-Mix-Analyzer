@@ -1,9 +1,11 @@
 // --- TYPES ---
 
 // --- ANALYSIS REPORT ---
-export type AnalysisReport = {
+export type AnalysisReportTypes = {
   report?: Report;
   features?: Features;
+  ref_features?: Features;
+  graphic?: Graphic;
 };
 
 // --- TYPE REPORT ---
@@ -12,14 +14,10 @@ type Report = {
   summary?: string;
   loudness_dynamics_analysis?: LoudnessDynamicsAnalysis;
   spectral_analysis?: SpectralAnalysis;
+  stereo_analysis?: Record<string, string>;
   strengths?: string[];
   areas_for_improvement?: string[];
   suggestions?: string[];
-
-  // Objects with string values
-  // loudness_analysis?: Record<string, string>;
-  // dynamics_analysis?: Record<string, string>;
-  stereo_analysis?: Record<string, string>;
 
   processing_recommendations?: {
     priority_order?: string[];
@@ -42,22 +40,22 @@ type Report = {
   ref_features?: Features;
 };
 
-type SpectralAnalysis = {
-  overview?: string;
-  correlation_per_band?: Record<string, string>;
-};
-
 type LoudnessDynamicsAnalysis = {
   overview?: string;
   loudness_analysis?: Record<string, string>;
   dynamics_analysis?: Record<string, string>;
 };
 
-// --- FEATURES TYPES ---
+type SpectralAnalysis = {
+  overview?: string;
+  energy_bands?: Record<string, string>;
+};
+// --- TYPE FEATURES ---
 type Features = {
   tempo_features?: TempoFeatures;
   loudness_features?: LoudnessFeatures;
   harmonic_features?: HarmonicFeatures;
+  frequency_spectrum_features?: FrequencySpectrumFeatures;
   stereo_image_features?: StereoImageFeatures;
 };
 
@@ -77,6 +75,15 @@ type HarmonicFeatures = {
   estimated_key?: string;
 };
 
+type FrequencySpectrumFeatures = {
+  energy_bands?: Record<string, number>;
+};
+
 type StereoImageFeatures = {
   stereo_width_label?: string;
+};
+
+// --- TYPE GRAPHIC ---
+type Graphic = {
+  graphic?: string;
 };

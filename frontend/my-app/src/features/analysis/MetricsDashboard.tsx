@@ -5,7 +5,7 @@ import { MetricCard } from "../../components/MetricCard/MetricCard";
 export function MetricsDashboard({ report }: { report: AnalysisReport }) {
   // Extract metrics from report
   const bpm = report.features?.tempo_features?.tempo_bpm ?? "N/A";
-  const key = report.features?.harmonic_features?.estimated_key ?? "N/A";
+  // const key = report.features?.harmonic_features?.estimated_key ?? "N/A";
   const stere_image =
     report.features?.stereo_image_features?.stereo_width_label ?? "N/A";
   const lufs = report.features?.loudness_features?.loudness_lufs ?? "N/A";
@@ -33,13 +33,13 @@ export function MetricsDashboard({ report }: { report: AnalysisReport }) {
           color="#f36021ff"
         />
 
-        <MetricCard
+        {/* <MetricCard
           title="Key"
           value={typeof key === "string" ? key : key}
           unit=""
           description="Beats Per Minute (BPM) – measures the tempo of your track, indicating how fast or slow it feels."
           color="#e521f3ff"
-        />
+        /> */}
 
         <MetricCard
           title="Stereo Image"

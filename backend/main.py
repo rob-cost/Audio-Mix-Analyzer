@@ -70,6 +70,7 @@ async def analyze(
         print(f"Error in validating: {e}")
 
 
+    # Generates features for uploaded tracks
     # Run CPU-bound analysis in separate threads
     try:
         features, ref_features = await asyncio.gather(
@@ -82,12 +83,13 @@ async def analyze(
     # Generate AI report
     report = generate_report(features, ref_features)
 
+
     print(f"\n{'+'*50}")
     print(f"FINAL REPORT:")
     print(features)
     print(f"\n{'+'*50}")
     print(f"\n{'+'*50}")
     print(f"AI REPORT:")
-    print(report['loudness_dynamics_analysis'])
+    print(report)
     print(f"\n{'+'*50}")
     return {"features": features, "ref_features": ref_features, "report": report}
