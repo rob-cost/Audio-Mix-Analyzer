@@ -151,46 +151,27 @@ export function ReportStregthAndImprovement({
 }: {
   report: AnalysisReportTypes;
 }) {
+  const strenghts_and_improvs = report.report?.strengths_and_improvements;
+
+  if (!strenghts_and_improvs) return null;
+
   return (
     <div style={{ marginTop: 30 }}>
-      <h2>Strengths & Improvements</h2>
-
       {/* Strengths */}
-      {report.report?.strengths && report.report.strengths.length > 0 && (
-        <div
-          style={{
-            marginBottom: 20,
-            padding: 15,
-            backgroundColor: "#e8f5e9",
-            borderRadius: 5,
-          }}
-        >
-          <h3>✓ Strengths</h3>
-          <ul>
-            {report.report.strengths.map((strength, idx) => (
-              <li key={idx}>{strength}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Areas for Improvement */}
-      {report.report?.areas_for_improvement &&
-        report.report.areas_for_improvement.length > 0 && (
+      {strenghts_and_improvs.strengths &&
+        strenghts_and_improvs.improvements && (
           <div
             style={{
               marginBottom: 20,
               padding: 15,
-              backgroundColor: "#fff3e0",
+              backgroundColor: "#e8f5e9",
               borderRadius: 5,
             }}
           >
-            <h3>⚠ Areas for Improvement</h3>
-            <ul>
-              {report.report.areas_for_improvement.map((area, idx) => (
-                <li key={idx}>{area}</li>
-              ))}
-            </ul>
+            <h3>Strengths</h3>
+            <p>{strenghts_and_improvs.strengths}</p>
+            <h3>Improvements</h3>
+            <p>{strenghts_and_improvs.improvements}</p>
           </div>
         )}
     </div>
@@ -198,12 +179,16 @@ export function ReportStregthAndImprovement({
 }
 
 export function ReportSuggestion({ report }: { report: AnalysisReportTypes }) {
+  const suggestions = report.report?.suggestions;
+
+  if (!suggestions) return null;
+
   return (
     <div style={{ marginTop: 30 }}>
       <h2>Suggestions</h2>
 
       {/* Suggestions */}
-      {report.report?.suggestions && report.report.suggestions.length > 0 && (
+      {suggestions.overview && suggestions.suggestions_list && (
         <div
           style={{
             marginBottom: 20,
@@ -212,10 +197,11 @@ export function ReportSuggestion({ report }: { report: AnalysisReportTypes }) {
             borderRadius: 5,
           }}
         >
-          <h3>💡 Suggestions</h3>
+          <p>{suggestions.overview}</p>
+
           <ul>
-            {report.report.suggestions.map((suggestion, idx) => (
-              <li key={idx}>{suggestion}</li>
+            {suggestions.suggestions_list.map((value, index) => (
+              <li key={index}>{value}</li>
             ))}
           </ul>
         </div>
@@ -300,24 +286,6 @@ export function ReportReferenceComparison({
     </div>
   );
 }
-
-/* Genre Context */
-
-// {report.report?.genre_context && (
-//   <div
-//     style={{
-//       marginBottom: 20,
-//       padding: 15,
-//       backgroundColor: "#fff3e0",
-//       borderRadius: 5,
-//     }}
-//   >
-//     <h3>Genre Context</h3>
-//     <p>
-//       <strong>Genre:</strong> {report.report.genre_context}
-//     </p>
-//   </div>
-// )}
 
 /* Technical Details (Collapsible)
       <details style={{ marginTop: 20 }}>

@@ -15,18 +15,9 @@ type Report = {
   loudness_dynamics_analysis?: LoudnessDynamicsAnalysis;
   spectral_analysis?: SpectralAnalysis;
   stereo_analysis?: Record<string, string>;
-  strengths?: string[];
-  areas_for_improvement?: string[];
-  suggestions?: string[];
-
-  processing_recommendations?: {
-    priority_order?: string[];
-    eq_adjustments?: string[];
-    compression?: string[];
-    stereo_processing?: string[];
-    limiting?: string;
-    other_processing?: string[];
-  };
+  strengths_and_improvements?: StrengthsAndImprovements;
+  suggestions?: Suggestions;
+  processing_recommendations?: Processing;
 
   reference_comparison?: {
     loudness_difference?: string;
@@ -50,6 +41,21 @@ type SpectralAnalysis = {
   overview?: string;
   energy_bands?: Record<string, string>;
 };
+
+type StrengthsAndImprovements = {
+  strengths?: string;
+  improvements?: string;
+};
+
+type Suggestions = {
+  overview?: string;
+  suggestions_list?: string[];
+};
+
+type Processing = {
+  processing_reccomendations?: Record<string, string>;
+};
+
 // --- TYPE FEATURES ---
 type Features = {
   tempo_features?: TempoFeatures;

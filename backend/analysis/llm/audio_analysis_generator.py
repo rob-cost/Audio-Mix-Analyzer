@@ -59,8 +59,7 @@ def generate_report(features: dict, features_reference: dict = None):
         "loudness_dynamics_analysis",
         "spectral_analysis",
         "stereo_analysis",
-        "strengths",
-        "areas_for_improvement",
+        "strengths_and_improvements",
         "suggestions",
         "processing_recommendations"
     ]

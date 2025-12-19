@@ -21,6 +21,7 @@ export default function AnalysisTabs({
       content: (
         <>
           <ReportOverview report={report} />
+          <ReportStregthAndImprovement report={report} />
           <MetricsDashboard report={report} />
           <SpectralCurveChart report={report} />
         </>
@@ -33,10 +34,6 @@ export default function AnalysisTabs({
     {
       label: "Stereo Image & Spectral Analysis",
       content: <ReportStereoImage report={report} />,
-    },
-    {
-      label: "Strengths & Improvements",
-      content: <ReportStregthAndImprovement report={report} />,
     },
     {
       label: "Suggestions",

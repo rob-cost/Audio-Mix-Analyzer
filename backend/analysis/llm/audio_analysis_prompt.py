@@ -84,33 +84,33 @@ ANALYSIS REQUIREMENTS:
    - Identify problematic frequencies, resonances, harshness, or muddy regions
    - Assess overall tonal balance (bright, dark, balanced, etc.)
 
-6. IDENTIFY STRENGTHS
-   - List 3-5 specific positive aspects of the mix
-   - Be concrete and technical
+6. IDENTIFY STRENGTHS AND IMPROVEMENT
+   - Describe the track's strengths in a clear and positive way, highlighting what makes it sound good or unique.
+   - Explain areas that could be improved, using simple technical terms that a non-expert can understand.
+   - Keep the tone friendly, encouraging, and constructive, avoiding overly complex jargon.
+   - Provide suggestions in a way that a client can easily grasp, e.g., "the bass feels a bit congested, which could be balanced for more clarity," rather than detailed mixing instructions.
 
-7. IDENTIFY AREAS FOR IMPROVEMENT
-   - List 3-5 specific issues or limitations
-   - Prioritize by impact on overall quality
+7. PROVIDE ACTIONABLE SUGGESTIONS
+   - Give an overview of possible ways to improve the mix, explaining each suggestion in simple terms, including what the change aims to achieve (e.g., clarity, balance, punch, or warmth).
+   - Provide a list of more technical suggestions for someone with audio knowledge, clearly linked to the improvement goal.
+   - Prioritize the suggestions by importance or potential impact on the overall mix quality.
 
-8. PROVIDE ACTIONABLE SUGGESTIONS
-   - Give specific, implementable advice
-   - Use exact values when possible
-   - Prioritize suggestions by importance
-
-9. PROCESSING RECOMMENDATIONS
-   - Provide detailed technical instructions:
+8. PROCESSING RECOMMENDATIONS
+   - Provide detailed, actionable technical instructions for improving the mix.
+   - Include specifics for each processing stage:
      * EQ adjustments with specific frequencies, gain amounts, and Q values
      * Compression settings (ratio, threshold, attack, release)
      * Stereo processing recommendations
      * Limiting settings (ceiling, release time)
      * Other processing (saturation, de-essing, etc.)
-   - Organize in recommended workflow order
-   - Be specific with plugin settings and values
+   - Organize recommendations in the logical order they would typically be applied in a workflow.
+   - Be precise with plugin settings, parameter values, and expected results.
+   - Keep explanations clear enough for someone with intermediate audio knowledge to follow.
 """
 
     if features_reference is not None:
         analysis_instructions += """
-10. REFERENCE COMPARISON (REQUIRED)
+9. REFERENCE COMPARISON (REQUIRED)
    - Compare loudness levels (LUFS difference, dynamic range)
    - Compare spectral balance (frequency by frequency)
    - Compare dynamic processing (compression levels, transient response)
@@ -149,12 +149,12 @@ JSON structure:
   "spectral_analysis": {
     "overview": "string",
     "energy_bands": {
-      "Low_end": "analysis and assessment",
-      "Low_mids": "analysis and assessment",
-      "Mids": "analysis and assessment",
-      "Upper_mids": "analysis and assessment",
-      "Highs": "analysis and assessment",
-      "Air": "analysis and assessment",
+      "Low_end": "Analysis and assessment",
+      "Low_mids": "Analysis and assessment",
+      "Mids": "Analysis and assessment",
+      "Upper_mids": "Analysis and assessment",
+      "Highs": "Analysis and assessment",
+      "Air": "Analysis and assessment",
     }
   },
 
@@ -171,42 +171,25 @@ JSON structure:
     },
   }
 
-  "strengths": [
-    "Specific strength 1",
-    "Specific strength 2",
-    "Specific strength 3"
-  ],
-  "areas_for_improvement": [
-    "Specific issue 1 with impact description",
-    "Specific issue 2 with impact description",
-    "Specific issue 3 with impact description"
-  ],
-  "suggestions": [
-    "Actionable suggestion 1 with specific approach",
-    "Actionable suggestion 2 with specific approach",
-    "Actionable suggestion 3 with specific approach"
-  ],
+  "strengths_and_improvements": {
+    "strengths": "string",
+    "improvements": "string"
+  }
+
+  "suggestions": 
+    "overview": "string"
+    "suggestions_list: [
+      "Actionable suggestion 1 with specific approach",
+      "Actionable suggestion 2 with specific approach",
+      "Actionable suggestion 3 with specific approach"
+    ],
+
   "processing_recommendations": {
-    "priority_order": [
-      "First critical adjustment",
-      "Second priority adjustment",
-      "Third priority adjustment"
-    ],
-    "eq_adjustments": [
-      "Specific EQ move 1 with frequency, gain, and Q value",
-      "Specific EQ move 2 with frequency, gain, and Q value"
-    ],
-    "compression": [
-      "Compression setting 1 with ratio, threshold, attack, release",
-      "Compression setting 2 with specific values"
-    ],
-    "stereo_processing": [
-      "Stereo processing recommendation with specific settings"
-    ],
-    "limiting": "Limiter settings with ceiling and release time",
-    "other_processing": [
-      "Additional processing recommendations"
-    ]
+    "process_1": "string",
+    "process_2": "string",
+    "process_3": "string",
+    "process_4": "string",
+    "process_5": "string",  
   }"""
 
     if features_reference is not None:
